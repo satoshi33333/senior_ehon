@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>えほんシニア — 思い出を絵本にする</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap');
+
+:root {
+  --washi:   #faf6ef;
+  --washi2:  #f0e9db;
+  --washi3:  #e4d9c8;
+  --ink:     #2a231a;
+  --ink2:    #5c4f3a;
+  --ink3:    #8a7a64;
+  --red:     #b5392a;
+  --gold:    #c8922a;
+  --sage:    #6b7c5e;
+  --shadow:  rgba(42,35,26,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Serif JP', 'Shippori Mincho', serif;
+  background: var(--washi);
+  min-height: 100vh;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(200,146,42,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(107,124,94,0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ===== タイトル画面 ===== */
+#screen-title {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 0;
+}
+
+.title-kamon {
+  width: 80px; height: 80px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 20px;
+  position: relative;
+  animation: slowSpin 20s linear infinite;
+}
+.title-kamon::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1px solid rgba(200,146,42,0.4);
+  border-radius: 50%;
+}
+@keyframes slowSpin { to { transform: rotate(360deg); } }
+
+.title-main {
+  font-family: 'Shippori Mincho', serif;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  font-weight: 700; color: var(--ink);
+  letter-spacing: 0.15em; text-align: center; line-height: 1.2;
+}
+.title-main span { color: var(--red); }
+.title-sub {
+  font-size: clamp(0.8rem, 3vw, 1rem);
+  color: var(--ink3); letter-spacing: 0.2em;
+  margin-top: 8px; text-align: center;
+}
+
+.title-divider {
+  width: 60px; height: 1px;
+  background: var(--gold); margin: 28px auto;
+  position: relative;
+}
+.title-divider::before, .title-divider::after {
+  content: '◇'; position: absolute; top: -8px;
+  font-size: 10px; color: var(--gold);
+}
+.title-divider::before { left: -14px; }
+.title-divider::after  { right: -14px; }
+
+.key-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.key-label { font-size: 11px; letter-spacing: 0.14em; color: var(--ink3); margin-bottom: 6px; display: block; }
+.key-row { display: flex; gap: 8px; }
+.key-input {
+  flex: 1; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 12px 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  outline: none; border-radius: 4px;
+}
+.key-input:focus { border-color: var(--gold); }
+.key-btn {
+  background: var(--gold); color: white; border: none;
+  padding: 12px 18px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  border-radius: 4px; letter-spacing: 0.06em;
+}
+.key-status { font-size: 11px; margin-top: 5px; color: var(--ink3); }
+.key-status.ok { color: var(--sage); }
+
+.members-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.members-label { font-size: 13px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 12px; text-align: center; }
+.members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.member-btn {
+  background: white; border: 1.5px solid var(--washi3);
+  color: var(--ink2); padding: 14px 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  text-align: center; border-radius: 6px; transition: all 0.2s; line-height: 1.5;
+}
+.member-btn:hover { border-color: var(--gold); }
+.member-btn.active { border-color: var(--red); background: rgba(181,57,42,0.05); color: var(--red); }
+.member-num { display: block; font-size: 22px; margin-bottom: 2px; }
+
+.names-section { width: 100%; max-width: 420px; margin-bottom: 24px; }
+.name-inputs { display: flex; flex-direction: column; gap: 8px; }
+.name-row { display: flex; align-items: center; gap: 10px; }
+.name-avatar { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+.name-field {
+  flex: 1; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  outline: none; border-radius: 4px;
+}
+.name-field:focus { border-color: var(--gold); }
+
+.start-btn {
+  width: 100%; max-width: 420px;
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 18px;
+  letter-spacing: 0.2em; border-radius: 6px; transition: opacity 0.2s;
+}
+.start-btn:hover { opacity: 0.88; }
+
+/* ===== ゲーム画面 ===== */
+.game-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--washi);
+  border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.game-logo { font-family: 'Shippori Mincho', serif; font-size: 16px; color: var(--ink); letter-spacing: 0.1em; }
+.game-logo span { color: var(--red); }
+
+.turn-progress { display: flex; align-items: center; gap: 6px; }
+.turn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--washi3); transition: all 0.3s; }
+.turn-dot.done    { background: var(--gold); }
+.turn-dot.current { background: var(--red); transform: scale(1.3); }
+.turn-label { font-size: 11px; color: var(--ink3); letter-spacing: 0.08em; margin-left: 4px; }
+
+.game-body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 320px;
+  overflow: hidden;
+  height: calc(100vh - 53px);
+}
+@media (max-width: 680px) {
+  .game-body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+}
+
+.story-panel {
+  padding: 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 16px;
+  border-right: 1px solid var(--washi3);
+}
+.story-panel::-webkit-scrollbar { width: 3px; }
+.story-panel::-webkit-scrollbar-thumb { background: var(--washi3); }
+
+.story-bubble { display: flex; flex-direction: column; gap: 4px; animation: fadeSlide 0.5s ease; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.story-bubble.ai-turn .bubble-text { background: rgba(200,146,42,0.08); border-left: 2px solid var(--gold); }
+.bubble-speaker { font-size: 11px; color: var(--ink3); letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
+.bubble-text { background: white; border-left: 2px solid var(--washi3); padding: 12px 14px; font-size: 15px; line-height: 1.8; color: var(--ink); }
+
+.input-panel { display: flex; flex-direction: column; background: var(--washi); overflow-y: auto; }
+
+.current-speaker { padding: 16px 18px; border-bottom: 1px solid var(--washi3); flex-shrink: 0; }
+.speaker-name { font-family: 'Shippori Mincho', serif; font-size: 18px; color: var(--ink); letter-spacing: 0.08em; }
+.speaker-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; line-height: 1.6; }
+
+.ai-question-box {
+  margin: 16px 18px;
+  background: rgba(200,146,42,0.07);
+  border: 1px solid rgba(200,146,42,0.25);
+  padding: 14px 16px; border-radius: 4px;
+}
+.ai-question-label { font-size: 10px; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
+.ai-question-text { font-size: 14px; line-height: 1.8; color: var(--ink2); }
+
+.ai-thinking { display: flex; align-items: center; gap: 6px; padding: 10px 18px; }
+.thinking-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+  animation: thinkBounce 1.1s ease-in-out infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.18s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.36s; }
+@keyframes thinkBounce { 0%,80%,100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-5px); opacity: 1; } }
+
+.gen-progress { margin: 0 18px; }
+.gen-bar-track { height: 2px; background: var(--washi3); position: relative; border-radius: 1px; }
+.gen-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.4s ease; border-radius: 1px; }
+.gen-label { font-size: 10px; color: var(--ink3); margin-top: 4px; letter-spacing: 0.08em; }
+
+.record-area {
+  padding: 16px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+
+.waveform { display: flex; align-items: center; gap: 4px; height: 24px; opacity: 0; transition: opacity 0.3s; }
+.waveform.active { opacity: 1; }
+.wave-bar { width: 4px; background: var(--red); border-radius: 2px; height: 4px; transition: height 0.1s; }
+
+.record-btn {
+  width: 72px; height: 72px; border-radius: 50%;
+  border: 2px solid var(--red); background: white;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; box-shadow: 0 2px 12px var(--shadow); font-size: 28px;
+}
+.record-btn:hover { background: rgba(181,57,42,0.05); }
+.record-btn.recording { background: var(--red); animation: pulseRed 1.4s ease-in-out infinite; }
+@keyframes pulseRed { 0%,100% { box-shadow: 0 0 0 0 rgba(181,57,42,0.4); } 50% { box-shadow: 0 0 0 14px rgba(181,57,42,0); } }
+
+.record-label { font-size: 12px; color: var(--ink3); letter-spacing: 0.1em; text-align: center; }
+
+.recognized-area { width: 100%; }
+.recognized-ta {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 12px 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  outline: none; resize: none; min-height: 70px;
+  border-radius: 4px; line-height: 1.7;
+}
+.recognized-ta:focus { border-color: var(--gold); }
+
+.action-row { display: flex; gap: 8px; width: 100%; }
+.btn-clear {
+  background: transparent; border: 1px solid var(--washi3);
+  color: var(--ink3); padding: 10px 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px; border-radius: 4px;
+}
+.btn-send {
+  flex: 1; background: var(--ink); color: white; border: none;
+  padding: 10px 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  letter-spacing: 0.1em; border-radius: 4px; transition: opacity 0.15s;
+}
+.btn-send:disabled { background: var(--washi3); color: var(--ink3); cursor: default; }
+.btn-text-toggle {
+  font-size: 11px; color: var(--ink3); background: none; border: none;
+  cursor: pointer; font-family: 'Noto Serif JP', serif; letter-spacing: 0.06em;
+}
+
+.text-row-wrap {
+  display: none; width: 100%;
+  flex-direction: column; gap: 6px;
+}
+.text-input-field {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  outline: none; border-radius: 4px;
+}
+.text-input-field:focus { border-color: var(--gold); }
+
+.finish-btn {
+  margin: 12px 18px; background: transparent;
+  border: 1px solid var(--red); color: var(--red);
+  padding: 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  letter-spacing: 0.1em; border-radius: 4px; text-align: center; transition: all 0.15s;
+}
+.finish-btn:hover { background: rgba(181,57,42,0.05); }
+
+/* ===== 待機画面 ===== */
+#screen-waiting {
+  align-items: center; justify-content: center;
+  padding: 40px 24px; gap: 20px;
+}
+.waiting-title { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--ink); letter-spacing: 0.12em; }
+.waiting-spinner {
+  width: 48px; height: 48px;
+  border: 2px solid var(--washi3); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 1.2s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.waiting-progress-wrap {
+  width: 100%; max-width: 320px; height: 3px;
+  background: var(--washi3); border-radius: 2px; position: relative; overflow: hidden;
+}
+.waiting-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.5s ease; }
+.waiting-count { font-size: 13px; color: var(--ink3); letter-spacing: 0.1em; }
+.waiting-skip-btn {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
+  padding: 10px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px; border-radius: 4px; letter-spacing: 0.06em;
+}
+
+/* ===== フィナーレ画面 ===== */
+#screen-finale { align-items: center; padding: 24px 20px; gap: 16px; overflow-y: auto; }
+
+.finale-header {
+  font-family: 'Shippori Mincho', serif;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  color: var(--ink); letter-spacing: 0.15em; text-align: center;
+}
+.finale-sub { font-size: 12px; color: var(--ink3); letter-spacing: 0.12em; }
+
+.finale-frame {
+  width: 100%; max-width: 640px;
+  background: white; border: 1px solid var(--washi3);
+  box-shadow: 0 4px 24px var(--shadow);
+}
+.finale-frame img { width: 100%; display: block; min-height: 200px; object-fit: cover; }
+.finale-text {
+  padding: 16px 20px; font-size: 16px; line-height: 1.9;
+  color: var(--ink); border-top: 1px solid var(--washi3); min-height: 60px;
+}
+
+.slide-nav { display: flex; align-items: center; gap: 16px; }
+.slide-nav-btn {
+  background: white; border: 1px solid var(--washi3); color: var(--ink2);
+  width: 40px; height: 40px; cursor: pointer; font-size: 16px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.slide-nav-btn:hover { border-color: var(--gold); }
+.slide-counter { font-size: 13px; color: var(--ink3); letter-spacing: 0.1em; min-width: 60px; text-align: center; }
+
+.finale-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
+.finale-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--washi3); cursor: pointer; transition: all 0.2s; }
+.finale-dot.active { background: var(--red); transform: scale(1.3); }
+
+.finale-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 640px; width: 100%; }
+.btn-play {
+  background: var(--red); color: white; border: none;
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px; letter-spacing: 0.12em; border-radius: 4px;
+}
+.btn-print {
+  background: white; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px; letter-spacing: 0.12em; border-radius: 4px;
+}
+.btn-again {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px; letter-spacing: 0.1em; border-radius: 4px;
+}
+
+.scene-grid-wrap { width: 100%; max-width: 640px; }
+.scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid-item {
+  background: white; border: 1px solid var(--washi3);
+  cursor: pointer; transition: all 0.15s; overflow: hidden;
+  border-radius: 3px; position: relative;
+}
+.grid-item:hover { border-color: var(--gold); box-shadow: 0 2px 8px var(--shadow); }
+.grid-item img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.grid-no-img { width: 100%; aspect-ratio: 4/3; background: var(--washi2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--ink3); }
+.grid-text { padding: 6px 8px; font-size: 10px; color: var(--ink3); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grid-num { position: absolute; top: 4px; left: 4px; font-size: 9px; color: var(--ink3); background: rgba(255,255,255,0.8); padding: 1px 5px; border-radius: 2px; }
+
+/* ポップアップ */
+.popup-overlay {
+  position: fixed; inset: 0; background: rgba(42,35,26,0.6);
+  z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.popup-overlay.hidden { display: none; }
+.popup-card {
+  background: var(--washi); max-width: 360px; width: 100%;
+  padding: 28px 24px; text-align: center;
+  box-shadow: 0 8px 40px rgba(42,35,26,0.3);
+  border: 1px solid var(--washi3);
+}
+.popup-icon { font-size: 40px; margin-bottom: 14px; }
+.popup-title { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); margin-bottom: 10px; letter-spacing: 0.08em; }
+.popup-text { font-size: 14px; color: var(--ink2); line-height: 1.8; margin-bottom: 20px; }
+.popup-btns { display: flex; flex-direction: column; gap: 8px; }
+.popup-btn-main {
+  background: var(--red); color: white; border: none; padding: 13px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px; letter-spacing: 0.1em; border-radius: 4px;
+}
+.popup-btn-sub {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
+  padding: 11px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px; letter-spacing: 0.06em; border-radius: 4px;
+}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: white; padding: 12px 20px;
+  font-size: 13px; letter-spacing: 0.06em; z-index: 300;
+  animation: toastIn 0.3s ease; max-width: 320px; text-align: center;
+  border-radius: 4px; line-height: 1.6;
+}
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+@media print {
+  .game-header, .input-panel, .finish-btn,
+  .finale-controls, .slide-nav, .finale-dots,
+  .scene-grid-wrap, .btn-again { display: none !important; }
+  body { background: white; }
+  .finale-frame { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== タイトル画面 ========== -->
+<div id="screen-title" class="screen active">
+  <div class="title-kamon">📖</div>
+  <h1 class="title-main">えほん<span>シニア</span></h1>
+  <p class="title-sub">— 思い出を絵本にする —</p>
+  <div class="title-divider"></div>
+
+  <div class="key-section">
+    <span class="key-label">■ OpenAI APIキー（絵の生成に使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-openai" type="password" placeholder="sk-..." />
+      <button class="key-btn" onclick="saveKey('openai')">保存</button>
+    </div>
+    <div class="key-status" id="status-openai">未設定</div>
+  </div>
+
+  <div class="key-section">
+    <span class="key-label">■ Anthropic APIキー（AIの語りかけに使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-anthropic" type="password" placeholder="sk-ant-..." />
+      <button class="key-btn" onclick="saveKey('anthropic')">保存</button>
+    </div>
+    <div class="key-status" id="status-anthropic">未設定</div>
+  </div>
+
+  <div class="title-divider"></div>
+
+  <div class="members-section">
+    <div class="members-label">今日は何人で語りますか？</div>
+    <div class="members-grid">
+      <button class="member-btn active" id="mb-1" onclick="selectMembers(1)">
+        <span class="member-num">一人</span>AIと二人で
+      </button>
+      <button class="member-btn" id="mb-2" onclick="selectMembers(2)">
+        <span class="member-num">二人</span>仲間と一緒
+      </button>
+      <button class="member-btn" id="mb-3" onclick="selectMembers(3)">
+        <span class="member-num">三人</span>みんなで
+      </button>
+    </div>
+  </div>
+
+  <div class="names-section">
+    <div class="name-inputs" id="name-inputs"></div>
+  </div>
+
+  <button class="start-btn" onclick="startStory()">物語を始める</button>
+</div>
+
+<!-- ========== ゲーム画面 ========== -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="game-logo">えほん<span>シニア</span></div>
+    <div class="turn-progress">
+      <div id="turn-dots" style="display:flex;gap:5px;"></div>
+      <span class="turn-label" id="turn-label">1/8</span>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <div class="story-panel" id="story-panel"></div>
+
+    <div class="input-panel" id="input-panel">
+      <div class="current-speaker">
+        <div class="speaker-name" id="speaker-name">…</div>
+        <div class="speaker-hint" id="speaker-hint">…</div>
+      </div>
+
+      <div class="ai-question-box" id="ai-question-box" style="display:none">
+        <div class="ai-question-label">AIからの問いかけ</div>
+        <div class="ai-question-text" id="ai-question-text"></div>
+      </div>
+
+      <div class="ai-thinking" id="ai-thinking" style="display:none">
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+        <span style="font-size:12px;color:var(--gold);letter-spacing:0.08em;margin-left:4px;">AIが問いを考えています…</span>
+      </div>
+
+      <div class="gen-progress" id="gen-progress" style="display:none">
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill" id="gen-bar-fill" style="width:0%"></div>
+        </div>
+        <div class="gen-label" id="gen-label">絵を描いています…</div>
+      </div>
+
+      <div class="record-area" id="record-area">
+        <div class="waveform" id="waveform">
+          <div class="wave-bar" id="wb0"></div>
+          <div class="wave-bar" id="wb1"></div>
+          <div class="wave-bar" id="wb2"></div>
+          <div class="wave-bar" id="wb3"></div>
+          <div class="wave-bar" id="wb4"></div>
+        </div>
+
+        <button class="record-btn" id="record-btn"
+          onmousedown="startRecord()" onmouseup="stopRecord()"
+          ontouchstart="startRecord()" ontouchend="stopRecord()">🎙️</button>
+
+        <div class="record-label" id="record-label">押しながら話す</div>
+
+        <div class="recognized-area">
+          <textarea class="recognized-ta" id="recognized-ta"
+            rows="3" placeholder="ここに話した言葉が出ます"
+            oninput="onTextEdit(this.value)"></textarea>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-clear" onclick="clearInput()">やり直す</button>
+          <button class="btn-send" id="btn-send" onclick="submitTurn()" disabled>次へ →</button>
+        </div>
+
+        <button class="btn-text-toggle" onclick="toggleTextRow()">✏️ 文字で入力する</button>
+        <!-- BUG FIX: display:flex + flex-direction:column をclassで管理 -->
+        <div class="text-row-wrap" id="text-row-wrap">
+          <input type="text" class="text-input-field" id="text-input"
+            placeholder="ここに入力してください…" />
+          <button class="btn-send" onclick="submitFromText()">次へ →</button>
+        </div>
+      </div>
+
+      <button class="finish-btn" onclick="confirmFinish()">絵本を完成させる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 待機画面 ========== -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-title">絵を描いています…</div>
+  <div class="waiting-spinner"></div>
+  <div class="waiting-progress-wrap">
+    <div class="waiting-progress-fill" id="waiting-fill" style="width:0%"></div>
+  </div>
+  <div class="waiting-count" id="waiting-count">0 / 0 枚完成</div>
+  <button class="waiting-skip-btn" onclick="skipWaiting()">このまま進む</button>
+</div>
+
+<!-- ========== フィナーレ画面 ========== -->
+<div id="screen-finale" class="screen">
+  <div class="finale-header">絵本ができました</div>
+  <div class="finale-sub" id="finale-title-text">みんなの思い出の絵本</div>
+
+  <div class="finale-frame">
+    <img id="finale-img" src="" alt="" style="display:none;" />
+    <div id="finale-no-img" class="grid-no-img" style="min-height:200px;">📖</div>
+    <div class="finale-text" id="finale-text"></div>
+  </div>
+
+  <div class="slide-nav">
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide-1)">◀</button>
+    <div class="slide-counter" id="slide-counter">1 / 1</div>
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide+1)">▶</button>
+  </div>
+
+  <div class="finale-dots" id="finale-dots"></div>
+
+  <div class="finale-controls">
+    <button class="btn-play" id="btn-play" onclick="playbackAll()">▶ 再生する</button>
+    <button class="btn-print" onclick="printStory()">🖨 印刷して家族に渡す</button>
+  </div>
+
+  <div class="scene-grid-wrap">
+    <div class="scene-grid" id="scene-grid"></div>
+  </div>
+
+  <button class="btn-again" onclick="resetAll()">🔄 もう一度作る</button>
+</div>
+
+<!-- ポップアップ：終了確認 -->
+<div id="popup-finish" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">📖</div>
+    <div class="popup-title">絵本にしますか？</div>
+    <div class="popup-text">これまでの思い出をまとめて絵本にします。</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="finishStory()">絵本を作る</button>
+      <button class="popup-btn-sub" onclick="hidePopup('popup-finish')">まだ続ける</button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：自動終了 -->
+<div id="popup-continue" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🌸</div>
+    <div class="popup-title">たくさん語りましたね</div>
+    <div class="popup-text">絵本にしますか？まだ続けることもできます。</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="finishStory()">絵本を作る</button>
+      <button class="popup-btn-sub" onclick="continueStory()">もう少し続ける</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const AVATARS = ['🌸','🍂','🌿','🌾','🌼','🍁','🎋','🌺'];
+
+let state = {
+  keys: { openai: '', anthropic: '' },
+  memberCount: 1,
+  players: [],
+  currentPlayerIdx: 0,
+  turns: [],
+  totalTurns: 0,
+  maxTurns: 8,
+  isRecording: false,
+  recognizedText: '',
+  currentQuestion: '',
+  storyTitle: '',
+};
+
+let bgGenCompleted = 0;
+let bgGenTotal = 0;
+const imageGenQueue = [];
+let imageGenRunning = false;
+
+let currentSlide = 0;
+let isPlaying = false;
+
+// ============================================================
+//  INIT
+// ============================================================
+(function init() {
+  const ok = localStorage.getItem('ehon_openai') || '';
+  const ak = localStorage.getItem('ehon_anthropic') || '';
+  if (ok) { state.keys.openai = ok; setKeyStatus('openai', true); }
+  if (ak) { state.keys.anthropic = ak; setKeyStatus('anthropic', true); }
+  // voiceschangedを早めに登録してキャッシュさせる
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.getVoices();
+  }
+  updateNameInputs();
+})();
+
+function saveKey(type) {
+  const val = document.getElementById('key-' + type).value.trim();
+  if (!val || val === '••••••••') return;
+  state.keys[type] = val;
+  localStorage.setItem('ehon_' + type, val);
+  document.getElementById('key-' + type).value = '••••••••';
+  setKeyStatus(type, true);
+}
+
+function setKeyStatus(type, ok) {
+  const el = document.getElementById('status-' + type);
+  el.textContent = ok ? '設定済み ✓' : '未設定';
+  el.className = 'key-status' + (ok ? ' ok' : '');
+}
+
+// ============================================================
+//  MEMBER SELECTION
+// ============================================================
+function selectMembers(n) {
+  state.memberCount = n;
+  [1,2,3].forEach(i => document.getElementById('mb-' + i).classList.toggle('active', i === n));
+  updateNameInputs();
+}
+
+function updateNameInputs() {
+  const container = document.getElementById('name-inputs');
+  container.innerHTML = '';
+  const defaults = ['おじいちゃん', 'おばあちゃん', '友達'];
+  for (let i = 0; i < state.memberCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'name-row';
+    row.innerHTML = `
+      <div class="name-avatar">${AVATARS[i]}</div>
+      <input class="name-field" id="name-${i}"
+        placeholder="${defaults[i] || ('参加者' + (i+1))}"
+        value="${defaults[i] || ('参加者' + (i+1))}" />`;
+    container.appendChild(row);
+  }
+}
+
+// ============================================================
+//  START
+// ============================================================
+function startStory() {
+  if (!state.keys.anthropic) {
+    showToast('Anthropic APIキーを設定してください');
+    return;
+  }
+
+  state.players = [];
+  for (let i = 0; i < state.memberCount; i++) {
+    const inp = document.getElementById('name-' + i);
+    state.players.push({
+      name: inp?.value.trim() || ('参加者' + (i+1)),
+      avatar: AVATARS[i],
+    });
+  }
+
+  // BUG FIX: maxTurnsも確実にリセット
+  state.turns = [];
+  state.totalTurns = 0;
+  state.maxTurns = 8;
+  state.currentPlayerIdx = 0;
+  state.recognizedText = '';
+  state.currentQuestion = '';
+  state.storyTitle = '';
+  bgGenCompleted = 0;
+  bgGenTotal = 0;
+  imageGenQueue.length = 0;
+  imageGenRunning = false;
+
+  buildTurnDots();
+  showScreen('game');
+  document.getElementById('story-panel').innerHTML = '';
+  clearInput();
+
+  // AIから最初の問いかけ（BUG FIX: .catch()でエラー時もUIを復旧）
+  showAIThinking(true);
+  generateFirstQuestion()
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      showAIThinking(false);
+      const fallback = 'どんな子供の頃の思い出がありますか？どんな遊びをしていましたか？';
+      state.currentQuestion = fallback;
+      showAIQuestion(fallback);
+      updateSpeakerBadge();
+    });
+}
+
+// ============================================================
+//  AI QUESTION GENERATION
+// ============================================================
+const MEMORY_THEMES = [
+  '子供の頃の遊び・学校の思い出',
+  '家族との大切な時間',
+  '仕事での忘れられない出来事',
+  '旅行や遠足の思い出',
+  '食べ物・料理にまつわる思い出',
+  '若い頃に夢中になったこと',
+  '出会いや別れの思い出',
+  '季節の行事・お祭りの思い出',
+];
+
+async function generateFirstQuestion() {
+  const playerNames = state.players.map(p => p.name).join('と');
+  const theme = MEMORY_THEMES[Math.floor(Math.random() * MEMORY_THEMES.length)];
+  const prompt = `あなたは高齢者の方々が思い出を語る場を優しく温かく引き出すファシリテーターです。
+
+参加者：${playerNames}
+今日のテーマのヒント：${theme}
+
+最初の問いかけを1〜2文で作ってください。
+条件：
+- 温かく、懐かしさを引き出す言葉で
+- 急がせず、ゆっくり思い出せるように
+- 「〜ですか？」「〜はどうでしたか？」など柔らかい語尾で
+- 具体的な場面が浮かぶような問い
+- 問いかけのみ出力（説明不要）`;
+  return await callAnthropic(prompt, 120);
+}
+
+async function generateNextQuestion(context) {
+  const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context}
+
+次の問いかけを1〜2文で作ってください。
+条件：
+- 直前の語りの内容を受け止め、「そうですか」「それは〜ですね」などで共感してから問いかける
+- 語りをさらに深める問いか、関連する別の思い出へ広げる問い
+- 温かく、評価せず、ただ聞きたいという姿勢で
+- 問いかけのみ出力（説明不要）`;
+  return await callAnthropic(prompt, 120);
+}
+
+async function generateTitle(context) {
+  const prompt = `以下の語りをもとに、絵本のタイトルを10文字以内で作ってください。
+温かく、懐かしさを感じるタイトル。タイトルのみ出力。
+
+${context}`;
+  return await callAnthropic(prompt, 30);
+}
+
+// ============================================================
+//  GAME FLOW
+// ============================================================
+function updateSpeakerBadge() {
+  const p = state.players[state.currentPlayerIdx];
+  if (!p) return;
+  document.getElementById('speaker-name').textContent = `${p.avatar} ${p.name}さんの番`;
+  document.getElementById('speaker-hint').textContent = '上の問いかけに、思い出を話してみてください。押しながら話すか、文字で入力できます。';
+}
+
+function showAIQuestion(text) {
+  document.getElementById('ai-question-box').style.display = 'block';
+  document.getElementById('ai-question-text').textContent = text;
+}
+
+function showAIThinking(show) {
+  document.getElementById('ai-thinking').style.display = show ? 'flex' : 'none';
+  const ra = document.getElementById('record-area');
+  ra.style.opacity = show ? '0.4' : '1';
+  ra.style.pointerEvents = show ? 'none' : 'auto';
+}
+
+// ============================================================
+//  VOICE RECORDING
+// ============================================================
+let recogRef = null;
+let waveAnimId = null;
+
+function startRecord() {
+  if (state.isRecording) return;
+  state.isRecording = true;
+  state.recognizedText = '';
+  document.getElementById('recognized-ta').value = '';
+  document.getElementById('recognized-ta').placeholder = '…聞いています…';
+  document.getElementById('btn-send').disabled = true;
+  document.getElementById('record-btn').classList.add('recording');
+  document.getElementById('waveform').classList.add('active');
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showToast('音声認識はChromeで使えます。文字入力をお使いください。');
+    stopRecord();
+    return;
+  }
+
+  recogRef = new SR();
+  recogRef.lang = 'ja-JP';
+  recogRef.continuous = true;
+  recogRef.interimResults = true;
+
+  recogRef.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+    state.recognizedText = text;
+    document.getElementById('recognized-ta').value = text;
+    document.getElementById('btn-send').disabled = !text.trim();
+  };
+
+  // BUG FIX: onerrorを適切にハンドリング（マイク拒否でUIが固まらないように）
+  recogRef.onerror = (e) => {
+    console.warn('SR error:', e.error);
+    if (e.error === 'not-allowed') {
+      showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
+    } else if (e.error === 'audio-capture') {
+      showToast('マイクが見つかりません。文字入力をお使いください。');
+    }
+    stopRecord();
+  };
+
+  recogRef.start();
+  animateWave();
+}
+
+function animateWave() {
+  if (!state.isRecording) return;
+  for (let i = 0; i < 5; i++) {
+    document.getElementById('wb' + i).style.height = (4 + Math.random() * 18) + 'px';
+  }
+  waveAnimId = requestAnimationFrame(animateWave);
+}
+
+function stopRecord() {
+  if (!state.isRecording) return;
+  state.isRecording = false;
+  if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
+  if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+  document.getElementById('record-btn').classList.remove('recording');
+  document.getElementById('waveform').classList.remove('active');
+  for (let i = 0; i < 5; i++) document.getElementById('wb' + i).style.height = '4px';
+
+  if (state.recognizedText.trim()) {
+    document.getElementById('recognized-ta').placeholder = '';
+    document.getElementById('btn-send').disabled = false;
+  } else {
+    document.getElementById('recognized-ta').placeholder = 'もう一度お試しください';
+  }
+}
+
+function onTextEdit(val) {
+  state.recognizedText = val.trim();
+  document.getElementById('btn-send').disabled = !val.trim();
+}
+
+function clearInput() {
+  state.recognizedText = '';
+  const ta = document.getElementById('recognized-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  const btnSend = document.getElementById('btn-send');
+  if (btnSend) btnSend.disabled = true;
+}
+
+// BUG FIX: display:flexをclassで正しく管理
+function toggleTextRow() {
+  const wrap = document.getElementById('text-row-wrap');
+  const isVisible = wrap.style.display === 'flex';
+  wrap.style.display = isVisible ? 'none' : 'flex';
+}
+
+function submitFromText() {
+  const val = document.getElementById('text-input').value.trim();
+  if (!val) return;
+  state.recognizedText = val;
+  document.getElementById('text-input').value = '';
+  submitTurn();
+}
+
+// ============================================================
+//  SUBMIT TURN
+// ============================================================
+async function submitTurn() {
+  const text = state.recognizedText.trim();
+  if (!text) return;
+
+  document.getElementById('btn-send').disabled = true;
+
+  const player = state.players[state.currentPlayerIdx];
+  addStoryBubble(player, text, false);
+
+  const turnData = { playerIdx: state.currentPlayerIdx, text, imageUrl: null };
+  state.turns.push(turnData);
+  state.totalTurns++;
+
+  clearInput();
+  updateTurnDots();
+
+  if (state.keys.openai) {
+    enqueueImage(text, state.turns.length - 1);
+  }
+
+  // 次のプレイヤーへ
+  state.currentPlayerIdx = (state.currentPlayerIdx + 1) % state.players.length;
+
+  // 規定回数に達したら
+  if (state.totalTurns >= state.maxTurns) {
+    setTimeout(() => document.getElementById('popup-continue').classList.remove('hidden'), 600);
+    return;
+  }
+
+  // AI問いかけ生成
+  showAIThinking(true);
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('\n');
+
+  // BUG FIX: .catch()でフォールバックを確実に実行
+  generateNextQuestion(context)
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      const fallbacks = [
+        'その頃、どんな気持ちでしたか？',
+        'その出来事で一番印象に残っていることは？',
+        '他にも思い出しましたか？',
+        'その後、どうなりましたか？',
+        'その時、一緒にいたのはどんな方でしたか？',
+      ];
+      const q = fallbacks[state.totalTurns % fallbacks.length];
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    });
+}
+
+// ============================================================
+//  STORY LOG
+// ============================================================
+function addStoryBubble(player, text, isAI) {
+  const panel = document.getElementById('story-panel');
+  const div = document.createElement('div');
+  div.className = 'story-bubble' + (isAI ? ' ai-turn' : '');
+  div.innerHTML = `
+    <div class="bubble-speaker">${player.avatar} ${player.name}</div>
+    <div class="bubble-text">${escHtml(text)}</div>`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+// ============================================================
+//  TURN DOTS
+// ============================================================
+function buildTurnDots() {
+  const container = document.getElementById('turn-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'turn-dot' + (i === 0 ? ' current' : '');
+    dot.id = 'td-' + i;
+    container.appendChild(dot);
+  }
+  document.getElementById('turn-label').textContent = `1/${state.maxTurns}`;
+}
+
+function updateTurnDots() {
+  const n = state.totalTurns;
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.getElementById('td-' + i);
+    if (!dot) continue;
+    dot.className = 'turn-dot' + (i < n ? ' done' : i === n ? ' current' : '');
+  }
+  document.getElementById('turn-label').textContent = `${Math.min(n+1, state.maxTurns)}/${state.maxTurns}`;
+}
+
+// ============================================================
+//  FINISH / CONTINUE
+// ============================================================
+function confirmFinish() {
+  document.getElementById('popup-finish').classList.remove('hidden');
+}
+
+function hidePopup(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// BUG FIX: continueStory()でAI問いかけも再生成する
+function continueStory() {
+  hidePopup('popup-continue');
+  state.maxTurns += 4;
+  buildTurnDots();
+  // 既存のdoneドットを復元
+  for (let i = 0; i < state.totalTurns; i++) {
+    const dot = document.getElementById('td-' + i);
+    if (dot) dot.className = 'turn-dot done';
+  }
+
+  // 次の問いかけを生成して再提示
+  showAIThinking(true);
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('\n');
+
+  generateNextQuestion(context)
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      showAIThinking(false);
+      const q = 'まだ他に話したいことはありますか？';
+      state.currentQuestion = q;
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    });
+}
+
+async function finishStory() {
+  hidePopup('popup-finish');
+  hidePopup('popup-continue');
+
+  const context = state.turns.map(t => t.text).join('\n');
+  try {
+    state.storyTitle = await generateTitle(context);
+  } catch(e) {
+    state.storyTitle = state.players.map(p => p.name).join('と') + 'の思い出';
+  }
+
+  launchFinale();
+}
+
+// ============================================================
+//  IMAGE GENERATION
+// ============================================================
+function enqueueImage(text, turnIdx) {
+  bgGenTotal++;
+  updateGenProgress();
+  document.getElementById('gen-progress').style.display = 'block';
+  imageGenQueue.push({ text, turnIdx });
+  if (!imageGenRunning) processImageQueue();
+}
+
+async function processImageQueue() {
+  imageGenRunning = true;
+  while (imageGenQueue.length > 0) {
+    const { text, turnIdx } = imageGenQueue.shift();
+    try {
+      await generateImage(text, turnIdx);
+    } catch(e) {
+      console.warn('Image gen failed:', e.message);
+    }
+    bgGenCompleted++;
+    updateGenProgress();
+    if (imageGenQueue.length > 0) await sleep(3500);
+  }
+  imageGenRunning = false;
+  if (bgGenCompleted >= bgGenTotal) {
+    setTimeout(() => {
+      const el = document.getElementById('gen-progress');
+      if (el) el.style.display = 'none';
+    }, 2000);
+  }
+}
+
+function updateGenProgress() {
+  const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+  document.getElementById('gen-bar-fill').style.width = pct + '%';
+  document.getElementById('gen-label').textContent =
+    bgGenCompleted >= bgGenTotal ? '絵が完成しました ✓' : `絵を描いています… ${bgGenCompleted}/${bgGenTotal}`;
+}
+
+async function generateImage(text, turnIdx) {
+  const storyContext = state.turns.slice(0, turnIdx + 1).map(t => t.text).join(' ');
+  const prompt = `昭和30〜50年代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調、懐かしい日本の風景や情景。
+場面:「${text}」
+背景文脈:「${storyContext.substring(0, 200)}」
+構図: 横長4:3、絵本の1ページ。温かく郷愁を感じる情景。
+絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
+
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${state.keys.openai}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-image-1',
+      prompt,
+      n: 1,
+      size: '1536x1024',
+      quality: 'medium',
+    }),
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+
+  const data = await res.json();
+  const imgData = data.data?.[0];
+  if (imgData) {
+    const src = imgData.b64_json
+      ? `data:image/png;base64,${imgData.b64_json}`
+      : imgData.url;
+    if (src) state.turns[turnIdx].imageUrl = src;
+  }
+}
+
+// ============================================================
+//  FINALE
+// ============================================================
+async function launchFinale() {
+  if (bgGenTotal > 0 && bgGenCompleted < bgGenTotal) {
+    showScreen('waiting');
+    await new Promise(resolve => {
+      const checkId = setInterval(() => {
+        const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+        document.getElementById('waiting-fill').style.width = pct + '%';
+        document.getElementById('waiting-count').textContent = `${bgGenCompleted} / ${bgGenTotal} 枚完成`;
+        if (bgGenCompleted >= bgGenTotal) {
+          clearInterval(checkId);
+          window._waitingCheckId = null;
+          resolve();
+        }
+      }, 500);
+      window._waitingResolve = resolve;
+      window._waitingCheckId = checkId;
+    });
+  }
+
+  buildFinaleDots();
+  buildSceneGrid();
+  document.getElementById('finale-title-text').textContent = state.storyTitle || '思い出の絵本';
+  gotoSlide(0);
+  showScreen('finale');
+}
+
+function skipWaiting() {
+  if (window._waitingCheckId) { clearInterval(window._waitingCheckId); window._waitingCheckId = null; }
+  if (window._waitingResolve) { window._waitingResolve(); window._waitingResolve = null; }
+}
+
+function buildFinaleDots() {
+  const container = document.getElementById('finale-dots');
+  container.innerHTML = '';
+  state.turns.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'finale-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => gotoSlide(i);
+    container.appendChild(dot);
+  });
+  document.getElementById('slide-counter').textContent = `1 / ${state.turns.length}`;
+}
+
+function buildSceneGrid() {
+  const grid = document.getElementById('scene-grid');
+  grid.innerHTML = '';
+  state.turns.forEach((turn, i) => {
+    const item = document.createElement('div');
+    item.className = 'grid-item';
+    item.onclick = () => gotoSlide(i);
+    const shortText = turn.text.length > 28 ? turn.text.slice(0, 28) + '…' : turn.text;
+    item.innerHTML =
+      `<span class="grid-num">${i+1}</span>` +
+      (turn.imageUrl
+        ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">`
+        : `<div class="grid-no-img">📖</div>`) +
+      `<div class="grid-text">${escHtml(shortText)}</div>`;
+    grid.appendChild(item);
+  });
+}
+
+function gotoSlide(idx) {
+  if (idx < 0 || idx >= state.turns.length) return;
+  currentSlide = idx;
+  const turn = state.turns[idx];
+  const img = document.getElementById('finale-img');
+  const noImg = document.getElementById('finale-no-img');
+  if (turn.imageUrl) {
+    img.src = turn.imageUrl;
+    img.style.display = 'block';
+    noImg.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    noImg.style.display = 'flex';
+  }
+  document.getElementById('finale-text').textContent = turn.text;
+  document.getElementById('slide-counter').textContent = `${idx+1} / ${state.turns.length}`;
+  document.querySelectorAll('.finale-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+}
+
+// ============================================================
+//  PLAYBACK
+// ============================================================
+async function playbackAll() {
+  if (isPlaying) {
+    isPlaying = false;
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    document.getElementById('btn-play').textContent = '▶ 再生する';
+    return;
+  }
+  isPlaying = true;
+  document.getElementById('btn-play').textContent = '⏹ 停止';
+  for (let i = 0; i < state.turns.length; i++) {
+    if (!isPlaying) break;
+    gotoSlide(i);
+    await speakText(state.turns[i].text);
+    await sleep(800);
+  }
+  isPlaying = false;
+  document.getElementById('btn-play').textContent = '▶ 再生する';
+}
+
+// BUG FIX: voicesが空の場合はonvoiceschangedで待つ
+async function speakText(text) {
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) { resolve(); return; }
+    window.speechSynthesis.cancel();
+
+    const doSpeak = () => {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ja-JP';
+      utter.rate = 0.82;
+      utter.pitch = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+      if (jaVoice) utter.voice = jaVoice;
+      utter.onend = resolve;
+      utter.onerror = resolve;
+      window.speechSynthesis.speak(utter);
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => { doSpeak(); };
+      // 2秒待っても来なければそのまま実行
+      setTimeout(doSpeak, 2000);
+    }
+  });
+}
+
+// ============================================================
+//  PRINT
+// ============================================================
+function printStory() {
+  let html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+<title>${escHtml(state.storyTitle || '思い出の絵本')}</title>
+<style>
+body{font-family:'Noto Serif JP',serif;background:white;color:#2a231a;max-width:800px;margin:0 auto;padding:20px;}
+h1{font-size:28px;text-align:center;color:#b5392a;margin-bottom:8px;letter-spacing:0.12em;}
+.subtitle{text-align:center;color:#8a7a64;font-size:13px;margin-bottom:30px;letter-spacing:0.1em;}
+.scene{page-break-inside:avoid;margin-bottom:32px;border:1px solid #e4d9c8;padding:0 0 16px;}
+.scene img{width:100%;display:block;}
+.scene-no-img{width:100%;height:180px;background:#f0e9db;display:flex;align-items:center;justify-content:center;font-size:40px;}
+.scene-text{padding:14px 18px;font-size:16px;line-height:1.9;}
+.scene-num{font-size:11px;color:#8a7a64;padding:10px 18px 0;letter-spacing:0.08em;}
+footer{text-align:center;font-size:11px;color:#8a7a64;margin-top:40px;border-top:1px solid #e4d9c8;padding-top:16px;}
+@media print{body{max-width:none;}}
+</style></head><body>
+<h1>${escHtml(state.storyTitle || '思い出の絵本')}</h1>
+<div class="subtitle">${escHtml(state.players.map(p => p.name).join('　'))}の思い出</div>`;
+
+  state.turns.forEach((turn, i) => {
+    html += `<div class="scene">
+<div class="scene-num">— ${i+1} —</div>
+${turn.imageUrl ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">` : '<div class="scene-no-img">📖</div>'}
+<div class="scene-text">${escHtml(turn.text)}</div>
+</div>`;
+  });
+
+  html += `<footer>えほんシニア — ${new Date().toLocaleDateString('ja-JP')} 作成</footer></body></html>`;
+
+  // BUG FIX: window.openがnullを返す場合（ポップアップブロック）のガード
+  const win = window.open('', '_blank');
+  if (!win) {
+    showToast('ポップアップがブロックされました。ブラウザの設定で許可してください。');
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { try { win.print(); } catch(e) {} };
+}
+
+// ============================================================
+//  RESET
+// ============================================================
+function resetAll() {
+  if (isPlaying) { isPlaying = false; window.speechSynthesis && window.speechSynthesis.cancel(); }
+  state.turns = [];
+  state.totalTurns = 0;
+  state.maxTurns = 8;
+  state.currentPlayerIdx = 0;
+  state.recognizedText = '';
+  state.storyTitle = '';
+  bgGenCompleted = 0;
+  bgGenTotal = 0;
+  imageGenQueue.length = 0;
+  imageGenRunning = false;
+  showScreen('title');
+}
+
+// ============================================================
+//  ANTHROPIC API
+// ============================================================
+async function callAnthropic(prompt, maxTokens = 200) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.keys.anthropic,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: maxTokens,
+      system: '簡潔に、指定された形式のみで出力する。余分な説明は一切加えない。',
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.content[0].text.trim();
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
