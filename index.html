@@ -493,6 +493,140 @@ body::before {
 }
 @keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
 
+/* ===== モード選択 ===== */
+.mode-section { width: 100%; max-width: 480px; margin-bottom: 24px; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-btn {
+  background: white; border: 2px solid var(--washi3);
+  color: var(--ink2); padding: 16px 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  text-align: center; border-radius: 8px; transition: all 0.2s; line-height: 1.6;
+}
+.mode-btn:hover { border-color: var(--gold); }
+.mode-btn.active { border-color: var(--red); background: rgba(181,57,42,0.05); color: var(--red); }
+.mode-icon { display: block; font-size: 28px; margin-bottom: 4px; }
+.mode-name { display: block; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+.mode-desc { display: block; font-size: 12px; color: var(--ink3); margin-top: 3px; }
+.mode-btn.active .mode-desc { color: var(--red); opacity: 0.7; }
+
+/* ===== Yes ANDゲーム画面 ===== */
+#screen-yesand { flex-direction: column; }
+.yesand-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--washi);
+  border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.yesand-logo { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); }
+.yesand-logo span { color: var(--red); }
+.yesand-mode-badge {
+  font-size: 13px; color: var(--gold); border: 1px solid var(--gold);
+  padding: 4px 12px; border-radius: 20px; letter-spacing: 0.06em;
+}
+.yesand-body {
+  flex: 1; display: grid; grid-template-columns: 1fr 360px;
+  overflow: hidden; height: calc(100vh - 57px);
+}
+@media (max-width: 680px) {
+  .yesand-body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+}
+.yesand-log {
+  padding: 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  border-right: 1px solid var(--washi3);
+}
+.yesand-log::-webkit-scrollbar { width: 3px; }
+.yesand-log::-webkit-scrollbar-thumb { background: var(--washi3); }
+
+.yesand-bubble { display: flex; flex-direction: column; gap: 4px; animation: fadeSlide 0.4s ease; }
+.yesand-bubble.ai-bubble .yesand-text { background: rgba(200,146,42,0.08); border-left: 3px solid var(--gold); }
+.yesand-bubble.topic-bubble .yesand-text { background: rgba(107,124,94,0.1); border-left: 3px solid var(--sage); font-style: italic; }
+.yesand-who { font-size: 14px; color: var(--ink2); letter-spacing: 0.08em; display: flex; align-items: center; gap: 5px; }
+.yesand-text { background: white; border-left: 3px solid var(--washi3); padding: 14px 16px; font-size: 17px; line-height: 1.8; color: var(--ink); }
+
+.yesand-input-panel { display: flex; flex-direction: column; background: var(--washi); overflow-y: auto; }
+.yesand-topic-box {
+  margin: 16px 18px; background: rgba(107,124,94,0.08);
+  border: 1px solid rgba(107,124,94,0.3); padding: 14px 16px; border-radius: 6px;
+}
+.yesand-topic-label { font-size: 13px; color: var(--sage); letter-spacing: 0.1em; margin-bottom: 6px; }
+.yesand-topic-text { font-size: 17px; color: var(--ink); line-height: 1.7; }
+.yesand-topic-refresh {
+  display: flex; gap: 8px; margin-top: 10px;
+}
+.btn-new-topic {
+  background: transparent; border: 1px solid var(--sage);
+  color: var(--sage); padding: 6px 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.btn-new-topic:hover { background: rgba(107,124,94,0.1); }
+.btn-own-topic {
+  background: transparent; border: 1px solid var(--washi3);
+  color: var(--ink2); padding: 6px 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.own-topic-wrap { display: none; flex-direction: column; gap: 8px; margin-top: 8px; }
+.own-topic-input {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  outline: none; border-radius: 4px;
+}
+.own-topic-input:focus { border-color: var(--gold); }
+.btn-set-topic {
+  background: var(--sage); color: white; border: none;
+  padding: 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  border-radius: 4px; letter-spacing: 0.08em;
+}
+
+.yesand-turn-badge {
+  padding: 12px 18px; border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.yesand-turn-name { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); }
+.yesand-turn-hint { font-size: 14px; color: var(--ink2); margin-top: 4px; line-height: 1.6; }
+
+.yesand-record-area {
+  padding: 16px 18px; display: flex; flex-direction: column;
+  align-items: center; gap: 12px; flex-shrink: 0;
+}
+.yesand-finish-btn {
+  margin: 12px 18px; background: transparent;
+  border: 1px solid var(--red); color: var(--red);
+  padding: 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.1em; border-radius: 4px; text-align: center;
+}
+.yesand-finish-btn:hover { background: rgba(181,57,42,0.05); }
+
+/* ===== Yes ANDおわり画面 ===== */
+#screen-yesand-end { align-items: center; padding: 40px 24px; gap: 20px; overflow-y: auto; }
+.yesand-end-title { font-family: 'Shippori Mincho', serif; font-size: 28px; color: var(--ink); letter-spacing: 0.15em; }
+.yesand-end-sub { font-size: 16px; color: var(--ink2); }
+.yesand-end-log {
+  width: 100%; max-width: 560px;
+  background: white; border: 1px solid var(--washi3);
+  border-radius: 6px; padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 360px; overflow-y: auto;
+}
+.yesand-end-line { font-size: 16px; line-height: 1.8; color: var(--ink); }
+.yesand-end-line .who { font-size: 13px; color: var(--ink3); margin-right: 8px; }
+.yesand-end-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+.btn-make-ehon {
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 20px;
+  letter-spacing: 0.15em; border-radius: 6px;
+}
+.btn-end-only {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.08em; border-radius: 6px;
+}
+
 @media print {
   .game-header, .input-panel, .finish-btn,
   .finale-controls, .slide-nav, .finale-dots,
@@ -582,7 +716,39 @@ body::before {
     <div class="name-inputs" id="name-inputs"></div>
   </div>
 
-  <button class="start-btn" onclick="startStory()">物語を始める</button>
+  <!-- モード選択 -->
+  <div class="mode-section">
+    <div class="members-label">どのモードで話しますか？</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" id="mode-ehon" onclick="selectMode('ehon')">
+        <span class="mode-icon">📖</span>
+        <span class="mode-name">思い出を絵本に</span>
+        <span class="mode-desc">AIが問いかけ、語りが絵本になる</span>
+      </button>
+      <button class="mode-btn" id="mode-anokoro" onclick="selectMode('anokoro')">
+        <span class="mode-icon">💬</span>
+        <span class="mode-name">あのころ話</span>
+        <span class="mode-desc">つづきをどうぞ</span>
+      </button>
+      <button class="mode-btn" id="mode-mirai" onclick="selectMode('mirai')">
+        <span class="mode-icon">🌟</span>
+        <span class="mode-name">未来話</span>
+        <span class="mode-desc">そうなったらいいね</span>
+      </button>
+      <button class="mode-btn" id="mode-moshimo" onclick="selectMode('moshimo')">
+        <span class="mode-icon">🌿</span>
+        <span class="mode-name">もしも話</span>
+        <span class="mode-desc">あの時こうしていたら</span>
+      </button>
+      <button class="mode-btn" id="mode-kansha" onclick="selectMode('kansha')">
+        <span class="mode-icon">🌸</span>
+        <span class="mode-name">感謝話</span>
+        <span class="mode-desc">ありがとうを伝えたい人へ</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn-main" onclick="startSelectedMode()">始める</button>
 </div>
 
 <!-- ========== ゲーム画面 ========== -->
@@ -666,6 +832,80 @@ body::before {
 
       <button class="finish-btn" onclick="confirmFinish()">絵本を完成させる</button>
     </div>
+  </div>
+</div>
+
+<!-- ========== Yes ANDゲーム画面 ========== -->
+<div id="screen-yesand" class="screen">
+  <div class="yesand-header">
+    <div class="yesand-logo">えほん<span>シニア</span></div>
+    <div class="yesand-mode-badge" id="yesand-mode-badge">あのころ話</div>
+  </div>
+  <div class="yesand-body">
+    <div class="yesand-log" id="yesand-log"></div>
+    <div class="yesand-input-panel">
+      <!-- お題表示 -->
+      <div class="yesand-topic-box" id="yesand-topic-box">
+        <div class="yesand-topic-label">🎯 お題</div>
+        <div class="yesand-topic-text" id="yesand-topic-text">考えています…</div>
+        <div class="yesand-topic-refresh">
+          <button class="btn-new-topic" onclick="refreshTopic()">🔄 別のお題</button>
+          <button class="btn-own-topic" onclick="toggleOwnTopic()">✏️ 自分で入力</button>
+        </div>
+        <div class="own-topic-wrap" id="own-topic-wrap">
+          <input class="own-topic-input" id="own-topic-input" placeholder="お題を入力…" />
+          <button class="btn-set-topic" onclick="setOwnTopic()">このお題で始める</button>
+        </div>
+      </div>
+      <!-- 誰の番か -->
+      <div class="yesand-turn-badge">
+        <div class="yesand-turn-name" id="yesand-turn-name">…</div>
+        <div class="yesand-turn-hint" id="yesand-turn-hint">…</div>
+      </div>
+      <!-- AI thinking -->
+      <div class="ai-thinking" id="yesand-thinking" style="display:none">
+        <div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>
+        <span style="font-size:16px;color:var(--gold);margin-left:4px;">考えています…</span>
+      </div>
+      <!-- 録音エリア -->
+      <div class="yesand-record-area" id="yesand-record-area">
+        <div class="waveform" id="yesand-waveform">
+          <div class="wave-bar" id="yw0"></div><div class="wave-bar" id="yw1"></div>
+          <div class="wave-bar" id="yw2"></div><div class="wave-bar" id="yw3"></div>
+          <div class="wave-bar" id="yw4"></div>
+        </div>
+        <button class="record-btn" id="yesand-record-btn"
+          onmousedown="yaStartRecord()" onmouseup="yaStopRecord()"
+          ontouchstart="yaStartRecord()" ontouchend="yaStopRecord()">🎙️</button>
+        <div class="record-label" id="yesand-record-label">押しながら話す</div>
+        <div class="recognized-area">
+          <textarea class="recognized-ta" id="yesand-ta"
+            rows="3" placeholder="ここに話した言葉が出ます"
+            oninput="yaOnTextEdit(this.value)"></textarea>
+        </div>
+        <div class="action-row">
+          <button class="btn-clear" onclick="yaClearInput()">やり直す</button>
+          <button class="btn-send" id="yesand-send-btn" onclick="yaSubmitTurn()" disabled>つづける →</button>
+        </div>
+        <button class="btn-text-toggle" onclick="yaToggleText()">✏️ 文字で入力する</button>
+        <div class="text-row-wrap" id="yesand-text-wrap">
+          <input type="text" class="text-input-field" id="yesand-text-input" placeholder="ここに入力…" />
+          <button class="btn-send" onclick="yaSubmitFromText()">つづける →</button>
+        </div>
+      </div>
+      <button class="yesand-finish-btn" onclick="yaFinish()">話を終わらせる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Yes ANDおわり画面 ========== -->
+<div id="screen-yesand-end" class="screen">
+  <div class="yesand-end-title" id="ya-end-title">話が終わりました</div>
+  <div class="yesand-end-sub" id="ya-end-sub">すてきな話でした</div>
+  <div class="yesand-end-log" id="ya-end-log"></div>
+  <div class="yesand-end-btns">
+    <button class="btn-make-ehon" onclick="yaToEhon()">📖 絵本にする</button>
+    <button class="btn-end-only" onclick="resetAll()">🔄 もう一度</button>
   </div>
 </div>
 
@@ -820,6 +1060,20 @@ let state = {
   currentQuestion: '',
   storyTitle: '',
   pendingTurnText: '',   // フィルタリング判定中のテキスト一時保存
+  appMode: 'ehon',       // 'ehon' | 'anokoro' | 'mirai' | 'moshimo' | 'kansha'
+};
+
+// Yes AND専用ステート
+let ya = {
+  mode: 'anokoro',
+  topic: '',
+  turns: [],
+  currentPlayerIdx: 0,
+  players: [],
+  isRecording: false,
+  recognizedText: '',
+  topicLocked: false,
+  generating: false,
 };
 
 let bgGenCompleted = 0;
@@ -867,6 +1121,34 @@ function setKeyStatus(type, ok) {
       ? '未設定（省略可・省略時はブラウザ音声）'
       : '未設定';
     el.className = 'key-status';
+  }
+}
+
+// ============================================================
+//  MODE SELECTION
+// ============================================================
+const MODE_NAMES = {
+  ehon:    '思い出を絵本に',
+  anokoro: 'あのころ話',
+  mirai:   '未来話',
+  moshimo: 'もしも話',
+  kansha:  '感謝話',
+};
+
+function selectMode(m) {
+  state.appMode = m;
+  ['ehon','anokoro','mirai','moshimo','kansha'].forEach(id => {
+    document.getElementById('mode-' + id).classList.toggle('active', id === m);
+  });
+  document.getElementById('start-btn-main').textContent =
+    m === 'ehon' ? '物語を始める' : MODE_NAMES[m] + ' を始める';
+}
+
+function startSelectedMode() {
+  if (state.appMode === 'ehon') {
+    startStory();
+  } else {
+    startYesAnd(state.appMode);
   }
 }
 
@@ -1738,10 +2020,35 @@ function gotoSlide(idx) {
 //  PLAYBACK
 // ============================================================
 // 絵本用：昔ばなし口調に変換してから読み上げる
+// 読み上げ前にClaudeで句読点だけ追加（言葉は一切変えない）
+async function addPunctuation(text) {
+  if (!state.keys.anthropic) return text;
+  try {
+    const prompt = `以下のテキストに、句読点（。、）だけを適切な位置に追加してください。
+
+厳守事項：
+- 言葉・単語・表現は一切変えない
+- 追加してよいのは「。」「、」「…」のみ
+- 文の終わりには「。」、自然な区切りには「、」を入れる
+- 句読点が既にある場合はそのまま残す
+- 変換後のテキストのみ出力（説明・前置き不要）
+
+テキスト：${text}`;
+    const result = await callAnthropic(prompt, 400);
+    return result.trim();
+  } catch(e) {
+    console.warn('punctuation failed, using original');
+    return text;
+  }
+}
+
 // テキストをそのまま読み上げ（言葉は変えない・声質とスピードだけ調整）
 async function speakStoryText(text) {
   if (!isPlaying) return;
-  await speakTextWithVoice(text, 'story');
+  // 句読点を追加してからSSMLに渡す
+  const punctuated = await addPunctuation(text);
+  if (!isPlaying) return; // 追加処理中に停止された場合
+  await speakTextWithVoice(punctuated, 'story');
 }
 
 function playbackAll() {
@@ -2140,6 +2447,287 @@ function showFilterPopup(text) {
 この内容は絵本のページにしますか？`;
   document.getElementById('popup-filter').classList.remove('hidden');
   return new Promise(resolve => { _filterResolve = resolve; });
+}
+
+// ============================================================
+//  YES AND LOGIC
+// ============================================================
+const YA_MODE_CONFIG = {
+  anokoro: {
+    badge: 'あのころ話（つづきをどうぞ）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}（${birthYear}年生まれ）が懐かしく思える「あのころ話」のお題を1つ作ってください。その世代が10〜30代だった頃（${birthYear+10}〜${birthYear+30}年頃）の具体的な出来事・文化・生活から。例：「白黒テレビが来た日のこと」「学校の給食で出た懐かしいメニュー」お題のみ出力（説明不要）。`,
+    aiPrompt: (topic, log) => `あなたは「あのころ話」のYes ANDの相手です。お題「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「はい、そうですね」「そうだねえ」などで受けてから同じ時代の記憶を1つ足す。短くテンポよく。返答のみ出力。`,
+    finishTitle: 'あのころ話、おわり',
+  },
+  mirai: {
+    badge: '未来話（そうなったらいいね）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}が「そうなったらいいな」と思える未来の話題を1つ作ってください。例：「孫と一緒にできること」「老後にやってみたいこと」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「未来話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうなったらいいですね」などで受けてから希望を一緒に広げる。短く温かく。返答のみ出力。`,
+    finishTitle: '未来話、おわり',
+  },
+  moshimo: {
+    badge: 'もしも話（あの時こうしていたら）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}の人生で「もしあの時こうしていたら」と思えそうな話題を1つ作ってください。例：「もし違う仕事を選んでいたら」「もしあの旅に行っていたら」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「もしも話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうですね、もしそうだったら」などで受けて楽しい空想として広げる。短く。返答のみ出力。`,
+    finishTitle: 'もしも話、おわり',
+  },
+  kansha: {
+    badge: '感謝話（ありがとうを伝えたい人へ）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}が「ありがとうと言いたい人」について話すきっかけになるお題を1つ作ってください。例：「人生で一番お世話になった人のこと」「今でも感謝している誰かの言葉」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「感謝話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうですね、その方は」などで温かく受けてから感謝の記憶をさらに引き出す。短く静かに。返答のみ出力。`,
+    finishTitle: '感謝話、おわり',
+  },
+};
+
+async function startYesAnd(mode) {
+  state.players = [];
+  for (let i = 0; i < state.memberCount; i++) {
+    const inp = document.getElementById('name-' + i);
+    state.players.push({ name: inp?.value.trim() || ('参加者' + (i+1)), avatar: AVATARS[i] });
+  }
+  ya.mode = mode;
+  ya.turns = [];
+  ya.currentPlayerIdx = 0;
+  ya.players = state.players;
+  ya.topic = '';
+  ya.topicLocked = false;
+  ya.recognizedText = '';
+  ya.generating = false;
+
+  const cfg = YA_MODE_CONFIG[mode];
+  document.getElementById('yesand-mode-badge').textContent = cfg.badge;
+  document.getElementById('yesand-log').innerHTML = '';
+  document.getElementById('yesand-topic-text').textContent = '考えています…';
+  document.getElementById('own-topic-wrap').style.display = 'none';
+  document.getElementById('yesand-topic-box').style.display = 'block';
+  yaClearInput();
+  showScreen('yesand');
+  yaUpdateTurnBadge();
+  await generateTopic();
+}
+
+async function generateTopic(exclude) {
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  const birthYear = 2026 - state.age;
+  let prompt = cfg.topicPrompt(state.age, state.gender, birthYear);
+  if (exclude) prompt += '\n\n以下のお題は使わないこと：「' + exclude + '」';
+  document.getElementById('yesand-topic-text').textContent = '考えています…';
+  try {
+    const topic = await callAnthropic(prompt, 80);
+    ya.topic = topic.trim();
+    document.getElementById('yesand-topic-text').textContent = ya.topic;
+  } catch(e) {
+    document.getElementById('yesand-topic-text').textContent = 'お題の生成に失敗しました。自分で入力してください。';
+  }
+}
+
+async function refreshTopic() {
+  if (ya.topicLocked) return;
+  await generateTopic(ya.topic);
+}
+
+function toggleOwnTopic() {
+  const wrap = document.getElementById('own-topic-wrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'flex' : 'none';
+}
+
+function setOwnTopic() {
+  const val = document.getElementById('own-topic-input').value.trim();
+  if (!val) return;
+  ya.topic = val;
+  document.getElementById('yesand-topic-text').textContent = val;
+  document.getElementById('own-topic-wrap').style.display = 'none';
+}
+
+function yaUpdateTurnBadge() {
+  if (ya.topicLocked) {
+    const p = ya.players[ya.currentPlayerIdx];
+    if (!p) return;
+    const honorifics = ['ちゃん','くん','さん','様','君','どの','殿'];
+    const needsSan = !honorifics.some(h => p.name.endsWith(h));
+    const displayName = needsSan ? p.name + 'さん' : p.name;
+    document.getElementById('yesand-turn-name').textContent = p.avatar + ' ' + displayName + 'の番';
+    document.getElementById('yesand-turn-hint').textContent = '「はい、そして…」で続けてみてください。押しながら話すか、文字で入力できます。';
+  } else {
+    document.getElementById('yesand-turn-name').textContent = '🎯 お題を確認してください';
+    document.getElementById('yesand-turn-hint').textContent = 'このお題で話を始めます。録音か文字入力でスタート。';
+  }
+}
+
+function yaLockTopicAndStart() {
+  ya.topicLocked = true;
+  document.getElementById('yesand-topic-box').style.display = 'none';
+  yaAddBubble('🎯 お題', ya.topic, 'topic');
+  yaUpdateTurnBadge();
+}
+
+let yaRecogRef = null;
+let yaWaveAnimId = null;
+
+function yaStartRecord() {
+  if (ya.isRecording || ya.generating) return;
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  ya.isRecording = true;
+  ya.recognizedText = '';
+  document.getElementById('yesand-ta').value = '';
+  document.getElementById('yesand-ta').placeholder = '…聞いています…';
+  document.getElementById('yesand-send-btn').disabled = true;
+  document.getElementById('yesand-record-btn').classList.add('recording');
+  document.getElementById('yesand-waveform').classList.add('active');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('音声認識はChromeで使えます。文字入力をお使いください。'); yaStopRecord(); return; }
+  yaRecogRef = new SR();
+  yaRecogRef.lang = 'ja-JP'; yaRecogRef.continuous = true; yaRecogRef.interimResults = true;
+  yaRecogRef.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+    ya.recognizedText = text;
+    document.getElementById('yesand-ta').value = text;
+    document.getElementById('yesand-send-btn').disabled = !text.trim();
+  };
+  yaRecogRef.onerror = () => yaStopRecord();
+  yaRecogRef.start();
+  yaAnimWave();
+}
+
+function yaAnimWave() {
+  if (!ya.isRecording) return;
+  for (let i = 0; i < 5; i++) document.getElementById('yw' + i).style.height = (4 + Math.random() * 18) + 'px';
+  yaWaveAnimId = requestAnimationFrame(yaAnimWave);
+}
+
+function yaStopRecord() {
+  if (!ya.isRecording) return;
+  ya.isRecording = false;
+  if (yaRecogRef) { try { yaRecogRef.stop(); } catch(e){} yaRecogRef = null; }
+  if (yaWaveAnimId) { cancelAnimationFrame(yaWaveAnimId); yaWaveAnimId = null; }
+  document.getElementById('yesand-record-btn').classList.remove('recording');
+  document.getElementById('yesand-waveform').classList.remove('active');
+  for (let i = 0; i < 5; i++) document.getElementById('yw' + i).style.height = '4px';
+  if (ya.recognizedText.trim()) {
+    document.getElementById('yesand-ta').placeholder = '';
+    document.getElementById('yesand-send-btn').disabled = false;
+  } else {
+    document.getElementById('yesand-ta').placeholder = 'もう一度お試しください';
+  }
+}
+
+function yaOnTextEdit(val) {
+  ya.recognizedText = val.trim();
+  document.getElementById('yesand-send-btn').disabled = !val.trim();
+}
+
+function yaClearInput() {
+  ya.recognizedText = '';
+  const ta = document.getElementById('yesand-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  const btn = document.getElementById('yesand-send-btn');
+  if (btn) btn.disabled = true;
+}
+
+function yaToggleText() {
+  const wrap = document.getElementById('yesand-text-wrap');
+  wrap.style.display = wrap.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function yaSubmitFromText() {
+  const val = document.getElementById('yesand-text-input').value.trim();
+  if (!val) return;
+  ya.recognizedText = val;
+  document.getElementById('yesand-text-input').value = '';
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  yaSubmitTurn();
+}
+
+async function yaSubmitTurn() {
+  const text = ya.recognizedText.trim();
+  if (!text || ya.generating) return;
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  document.getElementById('yesand-send-btn').disabled = true;
+  yaClearInput();
+  const p = ya.players[ya.currentPlayerIdx];
+  yaAddBubble(p.avatar + ' ' + p.name, text, 'user');
+  ya.turns.push({ who: p.name, text, isAI: false });
+  ya.currentPlayerIdx = (ya.currentPlayerIdx + 1) % ya.players.length;
+  if (ya.players.length === 1) {
+    await yaAITurn();
+  } else {
+    yaUpdateTurnBadge();
+    document.getElementById('yesand-send-btn').disabled = false;
+  }
+}
+
+async function yaAITurn() {
+  ya.generating = true;
+  const ra = document.getElementById('yesand-record-area');
+  ra.style.opacity = '0.4'; ra.style.pointerEvents = 'none';
+  document.getElementById('yesand-thinking').style.display = 'flex';
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  const log = ya.turns.map(t => t.who + '：「' + t.text + '」').join('\n');
+  try {
+    const reply = await callAnthropic(cfg.aiPrompt(ya.topic, log), 120);
+    yaAddBubble('✨ AI', reply, 'ai');
+    ya.turns.push({ who: 'AI', text: reply, isAI: true });
+    speakText(reply);
+  } catch(e) {
+    yaAddBubble('✨ AI', 'はい、そうですね。それはすてきな思い出ですね。', 'ai');
+  }
+  document.getElementById('yesand-thinking').style.display = 'none';
+  ra.style.opacity = '1'; ra.style.pointerEvents = 'auto';
+  ya.generating = false;
+  yaUpdateTurnBadge();
+  document.getElementById('yesand-send-btn').disabled = false;
+}
+
+function yaAddBubble(who, text, type) {
+  const log = document.getElementById('yesand-log');
+  const div = document.createElement('div');
+  div.className = 'yesand-bubble' + (type === 'ai' ? ' ai-bubble' : type === 'topic' ? ' topic-bubble' : '');
+  div.innerHTML = '<div class="yesand-who">' + escHtml(who) + '</div><div class="yesand-text">' + escHtml(text) + '</div>';
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function yaFinish() {
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  document.getElementById('ya-end-title').textContent = cfg.finishTitle;
+  document.getElementById('ya-end-sub').textContent = ya.turns.length + '回のやりとりでした';
+  const logEl = document.getElementById('ya-end-log');
+  logEl.innerHTML = '';
+  ya.turns.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'yesand-end-line';
+    div.innerHTML = '<span class="who">' + escHtml(t.who) + '</span>' + escHtml(t.text);
+    logEl.appendChild(div);
+  });
+  showScreen('yesand-end');
+}
+
+function yaToEhon() {
+  state.turns = ya.turns
+    .filter(t => !t.isAI)
+    .map(t => ({ playerIdx: 0, text: t.text, imageUrl: null, audioBlob: null }));
+  state.storyTitle = ya.topic;
+  state.players = ya.players;
+  state.totalTurns = state.turns.length;
+  bgGenCompleted = 0; bgGenTotal = 0;
+  imageGenQueue.length = 0; imageGenRunning = false;
+  if (state.keys.openai) {
+    state.turns.forEach((t, i) => enqueueImage(t.text, i));
+  }
+  launchFinale();
 }
 
 // ============================================================
