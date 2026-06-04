@@ -1049,8 +1049,7 @@ async function refreshQuestion() {
   const context = state.turns.map(t => {
     const p = state.players[t.playerIdx];
     return `${p.name}：「${t.text}」`;
-  }).join('
-');
+  }).join('\n');
 
   // 現在の問いかけを除外して別の問いを生成
   const currentQ = state.currentQuestion;
