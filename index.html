@@ -765,6 +765,26 @@ body::before {
   </div>
 </div>
 
+<!-- ポップアップ：声の選択 -->
+<div id="popup-voice-select" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🎙</div>
+    <div class="popup-title">どちらの声で読みますか？</div>
+    <div class="popup-text">絵本を読み上げる声を選んでください</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="startPlaybackWithVoice('user')">
+        🎙 じぶんの声で聴く
+      </button>
+      <button class="popup-btn-main" style="background:var(--gold);margin-top:2px;" onclick="startPlaybackWithVoice('ai')">
+        🔊 AIの声で聴く
+      </button>
+      <button class="popup-btn-sub" onclick="hidePopup('popup-voice-select')">
+        キャンセル
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ポップアップ：自動終了 -->
 <div id="popup-continue" class="popup-overlay hidden">
   <div class="popup-card">
@@ -789,6 +809,7 @@ let state = {
   memberCount: 1,
   gender: 'male',   // 'male' | 'female'
   age: 70,           // 語り手の現在の年齢
+  playbackMode: 'ai', // 'ai' | 'user'
   players: [],
   currentPlayerIdx: 0,
   turns: [],
@@ -1151,15 +1172,34 @@ function showAIThinking(show) {
 let recogRef = null;
 let waveAnimId = null;
 
+let _mediaRecorder = null;
+let _audioChunks = [];
+let _pendingAudioBlob = null; // 録音完了後のBlob（submitTurn前に一時保存）
+
 function startRecord() {
   if (state.isRecording) return;
   state.isRecording = true;
   state.recognizedText = '';
+  _audioChunks = [];
+  _pendingAudioBlob = null;
   document.getElementById('recognized-ta').value = '';
   document.getElementById('recognized-ta').placeholder = '…聞いています…';
   document.getElementById('btn-send').disabled = true;
   document.getElementById('record-btn').classList.add('recording');
   document.getElementById('waveform').classList.add('active');
+
+  // MediaRecorderで音声も録音（テキスト認識と並行）
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    _mediaRecorder = new MediaRecorder(stream);
+    _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = () => {
+      _pendingAudioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+    };
+    _mediaRecorder.start();
+  }).catch(() => {
+    // マイク取得失敗は無視（テキスト認識のみ続行）
+  });
 
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -1208,6 +1248,10 @@ function stopRecord() {
   if (!state.isRecording) return;
   state.isRecording = false;
   if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
+  if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+    try { _mediaRecorder.stop(); } catch(e) {}
+    _mediaRecorder = null;
+  }
   if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
   document.getElementById('record-btn').classList.remove('recording');
   document.getElementById('waveform').classList.remove('active');
@@ -1298,7 +1342,10 @@ async function submitTurn() {
   const player = state.players[state.currentPlayerIdx];
   addStoryBubble(player, confirmedText, false);
 
-  const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null };
+  // 音声BlobはMediaRecorderのonstopを少し待ってから取得
+  await sleep(200);
+  const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null, audioBlob: _pendingAudioBlob || null };
+  _pendingAudioBlob = null;
   state.turns.push(turnData);
   state.totalTurns++;
 
@@ -1691,53 +1738,64 @@ function gotoSlide(idx) {
 //  PLAYBACK
 // ============================================================
 // 絵本用：昔ばなし口調に変換してから読み上げる
+// テキストをそのまま読み上げ（言葉は変えない・声質とスピードだけ調整）
 async function speakStoryText(text) {
-  let narration = text;
-
-  // Anthropicキーがあれば口調を変換（停止済みならスキップ）
-  if (state.keys.anthropic && isPlaying) {
-    try {
-      const prompt = `以下の思い出のテキストを、日本昔ばなしのナレーターのような語り口調に変換してください。
-
-条件：
-- ゆっくり、温かく、懐かしさが伝わる口調
-- 「〜でございました」「〜でありました」「〜じゃったのです」などの昔ばなし調の語尾
-- 内容・事実は一切変えない（口調だけ変える）
-- 句読点を多めに入れて、自然な間が生まれるように
-- 変換後のテキストのみ出力（説明不要）
-
-テキスト：「${text}」`;
-      narration = await callAnthropic(prompt, 300);
-    } catch(e) {
-      console.warn('narration convert failed, using original');
-    }
-  }
-
-  // BUG FIX: 変換中に停止された場合は読み上げをスキップ
   if (!isPlaying) return;
-
-  await speakTextWithVoice(narration, 'story');
+  await speakTextWithVoice(text, 'story');
 }
 
-async function playbackAll() {
+function playbackAll() {
+  // 再生中なら停止
   if (isPlaying) {
     isPlaying = false;
     stopCurrentSpeech();
+    stopUserAudio();
     document.getElementById('btn-play').textContent = '▶ 再生する';
     return;
   }
+  // 声の選択ポップアップを表示
+  document.getElementById('popup-voice-select').classList.remove('hidden');
+}
+
+let _userAudio = null;
+function stopUserAudio() {
+  if (_userAudio) { try { _userAudio.pause(); _userAudio.src = ''; } catch(e) {} _userAudio = null; }
+}
+
+async function startPlaybackWithVoice(mode) {
+  hidePopup('popup-voice-select');
+  state.playbackMode = mode;
   isPlaying = true;
   document.getElementById('btn-play').textContent = '⏹ 停止';
 
   for (let i = 0; i < state.turns.length; i++) {
     if (!isPlaying) break;
     gotoSlide(i);
-    await speakStoryText(state.turns[i].text);
-    await sleep(1200); // 昔ばなし風にページ間の間を長めに
+    const turn = state.turns[i];
+
+    if (mode === 'user' && turn.audioBlob) {
+      // じぶんの声：録音したBlobをそのまま再生
+      await playUserAudio(turn.audioBlob);
+    } else {
+      // AIの声：テキストをそのまま読み上げ（変換なし）
+      await speakStoryText(turn.text);
+    }
+    await sleep(1200);
   }
 
   isPlaying = false;
   document.getElementById('btn-play').textContent = '▶ 再生する';
+}
+
+async function playUserAudio(blob) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _userAudio = audio;
+    audio.onended = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+    audio.onerror = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+    audio.play().catch(() => resolve());
+  });
 }
 
 // ── 音声再生管理 ─────────────────────────────────────────────────
@@ -1766,31 +1824,48 @@ function stopCurrentSpeech() {
 // story時は性別・年齢に合った声＋ゆっくりめに
 function getTTSVoiceConfig(mode) {
   if (mode === 'story') {
-    // 絵本読み上げ：語り手の性別・年齢に合わせた声
     const isElderly = state.age >= 60;
     if (state.gender === 'male') {
       return {
         name: isElderly ? 'ja-JP-Neural2-C' : 'ja-JP-Neural2-D',
         ssmlGender: 'MALE',
-        speakingRate: 0.78,  // 昔ばなし風にゆっくり
-        pitch: isElderly ? -2.0 : 0.0,  // 高齢男性は少し低く
+        speakingRate: 0.72,   // ゆっくり・温かく
+        pitch: isElderly ? -2.0 : 0.0,
+        useSSML: true,        // 句読点で間を空けるSSML使用
       };
     } else {
       return {
         name: isElderly ? 'ja-JP-Neural2-B' : 'ja-JP-Neural2-A',
         ssmlGender: 'FEMALE',
-        speakingRate: 0.78,
+        speakingRate: 0.72,
         pitch: isElderly ? -1.0 : 0.0,
+        useSSML: true,
       };
     }
   }
-  // 問いかけ（AI coach）：温かみのある女性の声・標準速度
   return {
     name: 'ja-JP-Neural2-B',
     ssmlGender: 'FEMALE',
     speakingRate: 0.90,
     pitch: 0.0,
+    useSSML: false,
   };
+}
+
+// テキストをSSML形式に変換（句読点に長めのbreakを挿入）
+function textToSSML(text) {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // 句読点・読点・感嘆符・疑問符の後に間を挿入
+  const withBreaks = escaped
+    .replace(/。/g, '。<break time="800ms"/>')
+    .replace(/、/g, '、<break time="400ms"/>')
+    .replace(/！/g, '！<break time="600ms"/>')
+    .replace(/？/g, '？<break time="600ms"/>')
+    .replace(/…/g, '<break time="700ms"/>');
+  return `<speak>${withBreaks}</speak>`;
 }
 
 // mode省略時は 'question' 扱い
@@ -1806,7 +1881,7 @@ async function speakTextWithVoice(text, mode = 'question') {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            input: { text },
+            input: voiceConfig.useSSML ? { ssml: textToSSML(text) } : { text },
             voice: {
               languageCode: 'ja-JP',
               name: voiceConfig.name,
@@ -1935,6 +2010,8 @@ ${turn.imageUrl ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">` : '<div c
 function resetAll() {
   if (isPlaying) { isPlaying = false; }
   stopCurrentSpeech();
+  stopUserAudio();
+  _pendingAudioBlob = null;
   // BUG FIX: 残留Promiseをクリア（誤作動防止）
   if (_confirmResolve) { _confirmResolve({ ok: false, text: '' }); _confirmResolve = null; }
   if (_filterResolve) { _filterResolve(false); _filterResolve = null; }
