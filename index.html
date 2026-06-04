@@ -757,35 +757,77 @@ function startStory() {
 //  AI QUESTION GENERATION
 // ============================================================
 const MEMORY_THEMES = [
-  '子供の頃の遊び・学校の思い出',
-  '家族との大切な時間',
-  '仕事での忘れられない出来事',
-  '旅行や遠足の思い出',
-  '食べ物・料理にまつわる思い出',
-  '若い頃に夢中になったこと',
-  '出会いや別れの思い出',
-  '季節の行事・お祭りの思い出',
+  // 子供・学校
+  '子供の頃の遊び・秘密基地や探検',
+  '小学校の運動会や学芸会の思い出',
+  '夏休みの宿題や自由研究',
+  '好きだった先生や友達のこと',
+  '通学路で見た景色や出来事',
+  '子供の頃に夢中になった遊びや玩具',
+  // 家族・暮らし
+  '家族みんなで食べた好きな料理',
+  'お母さんやお父さんの口癖や習慣',
+  '兄弟姉妹との思い出やいたずら',
+  '実家の台所や縁側の記憶',
+  '家族旅行や帰省の思い出',
+  'お正月やお盆の家族の集まり',
+  // 仕事・青春
+  '初めて働いた日や最初の仕事場',
+  '若い頃に夢中になった趣味や習い事',
+  '青春時代の恋愛や友情',
+  '職場での忘れられない出来事',
+  '初めてもらったお給料の使い道',
+  '仕事で一番がんばった時期',
+  // 食べ物・季節
+  '子供の頃に食べた懐かしいお菓子',
+  '近所のお気に入りの食べ物屋さん',
+  '季節ごとの行事食や特別な料理',
+  '初めて自分で作った料理',
+  '思い出の味・誰かが作ってくれた食事',
+  // 旅・場所
+  '印象に残っている旅行先や景色',
+  '生まれ育った町や懐かしい場所',
+  '初めて海や山を見たときのこと',
+  '電車やバスで移動した遠い記憶',
+  // 季節・自然
+  'お祭りや縁日の思い出',
+  '雪遊びや台風など自然にまつわる記憶',
+  '桜や紅葉など季節の風景',
+  '夕焼けや星空を眺めた記憶',
+];
+
+// 問いかけのバリエーションを出すための修飾語（ランダムに追加）
+const QUESTION_STYLES = [
+  '具体的な場面・音・匂いなど五感が浮かぶような',
+  '「一番〜」「初めて〜」「忘れられない〜」など特定の瞬間に焦点を当てた',
+  '誰かとの関係性（人物）が浮かぶような',
+  '季節や天気・時間帯が感じられるような',
+  '子供の自分の気持ちや感動が伝わるような',
+  '笑いや温かさが生まれるような軽やかな',
 ];
 
 async function generateFirstQuestion() {
   const playerNames = state.players.map(p => p.name).join('と');
   const theme = MEMORY_THEMES[Math.floor(Math.random() * MEMORY_THEMES.length)];
+  const style = QUESTION_STYLES[Math.floor(Math.random() * QUESTION_STYLES.length)];
   const prompt = `あなたは高齢者の方々が思い出を語る場を優しく温かく引き出すファシリテーターです。
 
 参加者：${playerNames}
-今日のテーマのヒント：${theme}
+今日のテーマ：${theme}
+問いかけのスタイル：${style}問い
 
 最初の問いかけを1〜2文で作ってください。
 条件：
+- 毎回まったく違う表現・切り口で（定型文は使わない）
 - 温かく、懐かしさを引き出す言葉で
 - 急がせず、ゆっくり思い出せるように
-- 「〜ですか？」「〜はどうでしたか？」など柔らかい語尾で
-- 具体的な場面が浮かぶような問い
-- 問いかけのみ出力（説明不要）`;
-  return await callAnthropic(prompt, 120);
+- 「〜ですか？」「〜はどうでしたか？」「〜を覚えていますか？」など柔らかい語尾で
+- 問いかけのみ出力（説明・前置き不要）`;
+  return await callAnthropic(prompt, 150);
 }
 
 async function generateNextQuestion(context) {
+  const style = QUESTION_STYLES[Math.floor(Math.random() * QUESTION_STYLES.length)];
   const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
 
 【これまでの語り】
@@ -793,11 +835,13 @@ ${context}
 
 次の問いかけを1〜2文で作ってください。
 条件：
-- 直前の語りの内容を受け止め、「そうですか」「それは〜ですね」などで共感してから問いかける
+- 直前の語りの内容を受け止め、「そうですか」「それは〜ですね」「素敵ですね」などで共感してから問いかける
 - 語りをさらに深める問いか、関連する別の思い出へ広げる問い
+- ${style}問いにする
+- 前回と同じ表現・切り口は絶対に繰り返さない（毎回新鮮な問いかけ）
 - 温かく、評価せず、ただ聞きたいという姿勢で
 - 問いかけのみ出力（説明不要）`;
-  return await callAnthropic(prompt, 120);
+  return await callAnthropic(prompt, 150);
 }
 
 async function generateTitle(context) {
@@ -821,6 +865,10 @@ function updateSpeakerBadge() {
 function showAIQuestion(text) {
   document.getElementById('ai-question-box').style.display = 'block';
   document.getElementById('ai-question-text').textContent = text;
+  // 自動読み上げ（録音中でなければ）
+  if (!state.isRecording) {
+    speakText(text);
+  }
 }
 
 function showAIThinking(show) {
