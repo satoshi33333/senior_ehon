@@ -213,6 +213,17 @@ body::before {
 }
 .ai-question-label { font-size: 13px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
 .ai-question-text { font-size: 18px; line-height: 1.9; color: var(--ink); }
+.ai-question-refresh {
+  display: flex; justify-content: flex-end; margin-top: 8px;
+}
+.btn-refresh-question {
+  background: transparent; border: 1px solid var(--gold);
+  color: var(--gold); padding: 6px 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  border-radius: 4px; letter-spacing: 0.06em; transition: all 0.15s;
+}
+.btn-refresh-question:hover { background: rgba(200,146,42,0.08); }
+.btn-refresh-question:disabled { opacity: 0.4; cursor: default; }
 
 .ai-thinking { display: flex; align-items: center; gap: 6px; padding: 10px 18px; }
 .thinking-dot {
@@ -596,6 +607,12 @@ body::before {
       <div class="ai-question-box" id="ai-question-box" style="display:none">
         <div class="ai-question-label">AIからの問いかけ</div>
         <div class="ai-question-text" id="ai-question-text"></div>
+        <div class="ai-question-refresh">
+          <button class="btn-refresh-question" id="btn-refresh-question"
+            onclick="refreshQuestion()" title="別の問いかけに変える">
+            🔄 別の問いかけ
+          </button>
+        </div>
       </div>
 
       <div class="ai-thinking" id="ai-thinking" style="display:none">
@@ -1020,6 +1037,58 @@ ${context}
   return await callAnthropic(prompt, 150);
 }
 
+// 「別の問いかけ」ボタン
+async function refreshQuestion() {
+  if (!state.keys.anthropic) return;
+
+  const btn = document.getElementById('btn-refresh-question');
+  if (btn) btn.disabled = true;
+
+  showAIThinking(true);
+
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('
+');
+
+  // 現在の問いかけを除外して別の問いを生成
+  const currentQ = state.currentQuestion;
+  const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context || '（まだ語りはありません）'}
+
+【直前の問いかけ（これとは違う問いを作ること）】
+「${currentQ}」
+
+上記とは完全に違う切り口・テーマで、新しい問いかけを1〜2文で作ってください。
+条件：
+- 直前の問いとテーマ・表現が重ならないこと
+- 温かく、懐かしさを引き出す言葉で
+- 「〜ですか？」「〜はどうでしたか？」など柔らかい語尾で
+- 問いかけのみ出力（説明不要）`;
+
+  try {
+    const q = await callAnthropic(prompt, 150);
+    state.currentQuestion = q;
+    showAIThinking(false);
+    showAIQuestion(q);
+    // ストーリーログのAI問いかけも更新
+    const bubbles = document.querySelectorAll('#story-panel .ai-turn');
+    if (bubbles.length > 0) {
+      const lastBubble = bubbles[bubbles.length - 1];
+      const textEl = lastBubble.querySelector('.bubble-text');
+      if (textEl) textEl.textContent = q;
+    }
+  } catch(e) {
+    showAIThinking(false);
+    showToast('別の問いかけの生成に失敗しました。もう一度お試しください。');
+  }
+
+  if (btn) btn.disabled = false;
+}
+
 async function generateTitle(context) {
   const prompt = `以下の語りをもとに、絵本のタイトルを10文字以内で作ってください。
 温かく、懐かしさを感じるタイトル。タイトルのみ出力。
@@ -1034,7 +1103,11 @@ ${context}`;
 function updateSpeakerBadge() {
   const p = state.players[state.currentPlayerIdx];
   if (!p) return;
-  document.getElementById('speaker-name').textContent = `${p.avatar} ${p.name}さんの番`;
+  // 「ちゃん」「くん」「さん」「様」「君」で終わる名前には「さん」をつけない
+  const honorifics = ['ちゃん', 'くん', 'さん', '様', '君', 'どの', '殿'];
+  const needsSan = !honorifics.some(h => p.name.endsWith(h));
+  const displayName = needsSan ? p.name + 'さん' : p.name;
+  document.getElementById('speaker-name').textContent = `${p.avatar} ${displayName}の番`;
   document.getElementById('speaker-hint').textContent = '上の問いかけに、思い出を話してみてください。押しながら話すか、文字で入力できます。';
 }
 
