@@ -77,8 +77,8 @@ body::before {
 }
 .title-main span { color: var(--red); }
 .title-sub {
-  font-size: clamp(0.8rem, 3vw, 1rem);
-  color: var(--ink3); letter-spacing: 0.2em;
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  color: var(--ink2); letter-spacing: 0.2em;
   margin-top: 8px; text-align: center;
 }
 
@@ -95,31 +95,31 @@ body::before {
 .title-divider::after  { right: -14px; }
 
 .key-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
-.key-label { font-size: 11px; letter-spacing: 0.14em; color: var(--ink3); margin-bottom: 6px; display: block; }
+.key-label { font-size: 14px; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 6px; display: block; }
 .key-row { display: flex; gap: 8px; }
 .key-input {
   flex: 1; background: white; border: 1px solid var(--washi3);
   color: var(--ink); padding: 12px 14px;
-  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
   outline: none; border-radius: 4px;
 }
 .key-input:focus { border-color: var(--gold); }
 .key-btn {
   background: var(--gold); color: white; border: none;
   padding: 12px 18px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
   border-radius: 4px; letter-spacing: 0.06em;
 }
-.key-status { font-size: 11px; margin-top: 5px; color: var(--ink3); }
+.key-status { font-size: 14px; margin-top: 6px; color: var(--ink2); }
 .key-status.ok { color: var(--sage); }
 
 .members-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
-.members-label { font-size: 13px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 12px; text-align: center; }
+.members-label { font-size: 16px; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 12px; text-align: center; }
 .gender-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
 .gender-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .age-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
 .age-row { display: flex; align-items: center; gap: 12px; }
-.age-label-text { font-size: 13px; color: var(--ink2); letter-spacing: 0.08em; white-space: nowrap; }
+.age-label-text { font-size: 16px; color: var(--ink); letter-spacing: 0.08em; white-space: nowrap; }
 .age-input {
   width: 90px; background: white; border: 1px solid var(--washi3);
   color: var(--ink); padding: 10px 12px;
@@ -127,17 +127,17 @@ body::before {
   outline: none; border-radius: 4px; text-align: center;
 }
 .age-input:focus { border-color: var(--gold); }
-.age-unit { font-size: 15px; color: var(--ink2); letter-spacing: 0.08em; }
+.age-unit { font-size: 17px; color: var(--ink); letter-spacing: 0.08em; }
 .members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .member-btn {
   background: white; border: 1.5px solid var(--washi3);
   color: var(--ink2); padding: 14px 10px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
   text-align: center; border-radius: 6px; transition: all 0.2s; line-height: 1.5;
 }
 .member-btn:hover { border-color: var(--gold); }
 .member-btn.active { border-color: var(--red); background: rgba(181,57,42,0.05); color: var(--red); }
-.member-num { display: block; font-size: 22px; margin-bottom: 2px; }
+.member-num { display: block; font-size: 26px; margin-bottom: 2px; }
 
 .names-section { width: 100%; max-width: 420px; margin-bottom: 24px; }
 .name-inputs { display: flex; flex-direction: column; gap: 8px; }
@@ -146,7 +146,7 @@ body::before {
 .name-field {
   flex: 1; background: white; border: 1px solid var(--washi3);
   color: var(--ink); padding: 10px 12px;
-  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px;
   outline: none; border-radius: 4px;
 }
 .name-field:focus { border-color: var(--gold); }
@@ -155,7 +155,7 @@ body::before {
   width: 100%; max-width: 420px;
   background: var(--red); color: white; border: none;
   padding: 18px; cursor: pointer;
-  font-family: 'Shippori Mincho', serif; font-size: 18px;
+  font-family: 'Shippori Mincho', serif; font-size: 22px;
   letter-spacing: 0.2em; border-radius: 6px; transition: opacity 0.2s;
 }
 .start-btn:hover { opacity: 0.88; }
@@ -166,18 +166,18 @@ body::before {
   padding: 14px 20px; background: var(--washi);
   border-bottom: 1px solid var(--washi3); flex-shrink: 0;
 }
-.game-logo { font-family: 'Shippori Mincho', serif; font-size: 16px; color: var(--ink); letter-spacing: 0.1em; }
+.game-logo { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); letter-spacing: 0.1em; }
 .game-logo span { color: var(--red); }
 
 .turn-progress { display: flex; align-items: center; gap: 6px; }
-.turn-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--washi3); transition: all 0.3s; }
+.turn-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--washi3); transition: all 0.3s; }
 .turn-dot.done    { background: var(--gold); }
 .turn-dot.current { background: var(--red); transform: scale(1.3); }
-.turn-label { font-size: 11px; color: var(--ink3); letter-spacing: 0.08em; margin-left: 4px; }
+.turn-label { font-size: 14px; color: var(--ink2); letter-spacing: 0.08em; margin-left: 4px; }
 
 .game-body {
   flex: 1; display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 1fr 360px;
   overflow: hidden;
   height: calc(100vh - 53px);
 }
@@ -196,14 +196,14 @@ body::before {
 .story-bubble { display: flex; flex-direction: column; gap: 4px; animation: fadeSlide 0.5s ease; }
 @keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .story-bubble.ai-turn .bubble-text { background: rgba(200,146,42,0.08); border-left: 2px solid var(--gold); }
-.bubble-speaker { font-size: 11px; color: var(--ink3); letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
-.bubble-text { background: white; border-left: 2px solid var(--washi3); padding: 12px 14px; font-size: 15px; line-height: 1.8; color: var(--ink); }
+.bubble-speaker { font-size: 14px; color: var(--ink2); letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
+.bubble-text { background: white; border-left: 2px solid var(--washi3); padding: 14px 16px; font-size: 17px; line-height: 1.8; color: var(--ink); }
 
 .input-panel { display: flex; flex-direction: column; background: var(--washi); overflow-y: auto; }
 
 .current-speaker { padding: 16px 18px; border-bottom: 1px solid var(--washi3); flex-shrink: 0; }
-.speaker-name { font-family: 'Shippori Mincho', serif; font-size: 18px; color: var(--ink); letter-spacing: 0.08em; }
-.speaker-hint { font-size: 12px; color: var(--ink3); margin-top: 4px; line-height: 1.6; }
+.speaker-name { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--ink); letter-spacing: 0.08em; }
+.speaker-hint { font-size: 15px; color: var(--ink2); margin-top: 4px; line-height: 1.6; }
 
 .ai-question-box {
   margin: 16px 18px;
@@ -211,8 +211,8 @@ body::before {
   border: 1px solid rgba(200,146,42,0.25);
   padding: 14px 16px; border-radius: 4px;
 }
-.ai-question-label { font-size: 10px; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
-.ai-question-text { font-size: 14px; line-height: 1.8; color: var(--ink2); }
+.ai-question-label { font-size: 13px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
+.ai-question-text { font-size: 18px; line-height: 1.9; color: var(--ink); }
 
 .ai-thinking { display: flex; align-items: center; gap: 6px; padding: 10px 18px; }
 .thinking-dot {
@@ -239,23 +239,23 @@ body::before {
 .wave-bar { width: 4px; background: var(--red); border-radius: 2px; height: 4px; transition: height 0.1s; }
 
 .record-btn {
-  width: 72px; height: 72px; border-radius: 50%;
-  border: 2px solid var(--red); background: white;
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 3px solid var(--red); background: white;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s; box-shadow: 0 2px 12px var(--shadow); font-size: 28px;
+  transition: all 0.2s; box-shadow: 0 2px 12px var(--shadow); font-size: 36px;
 }
 .record-btn:hover { background: rgba(181,57,42,0.05); }
 .record-btn.recording { background: var(--red); animation: pulseRed 1.4s ease-in-out infinite; }
 @keyframes pulseRed { 0%,100% { box-shadow: 0 0 0 0 rgba(181,57,42,0.4); } 50% { box-shadow: 0 0 0 14px rgba(181,57,42,0); } }
 
-.record-label { font-size: 12px; color: var(--ink3); letter-spacing: 0.1em; text-align: center; }
+.record-label { font-size: 16px; color: var(--ink2); letter-spacing: 0.1em; text-align: center; }
 
 .recognized-area { width: 100%; }
 .recognized-ta {
   width: 100%; background: white; border: 1px solid var(--washi3);
   color: var(--ink); padding: 12px 14px;
-  font-family: 'Noto Serif JP', serif; font-size: 14px;
-  outline: none; resize: none; min-height: 70px;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
+  outline: none; resize: none; min-height: 80px;
   border-radius: 4px; line-height: 1.7;
 }
 .recognized-ta:focus { border-color: var(--gold); }
@@ -263,18 +263,18 @@ body::before {
 .action-row { display: flex; gap: 8px; width: 100%; }
 .btn-clear {
   background: transparent; border: 1px solid var(--washi3);
-  color: var(--ink3); padding: 10px 16px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px; border-radius: 4px;
+  color: var(--ink2); padding: 12px 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px; border-radius: 4px;
 }
 .btn-send {
   flex: 1; background: var(--ink); color: white; border: none;
   padding: 10px 16px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
   letter-spacing: 0.1em; border-radius: 4px; transition: opacity 0.15s;
 }
-.btn-send:disabled { background: var(--washi3); color: var(--ink3); cursor: default; }
+.btn-send:disabled { background: var(--washi3); color: var(--ink2); cursor: default; }
 .btn-text-toggle {
-  font-size: 11px; color: var(--ink3); background: none; border: none;
+  font-size: 14px; color: var(--ink2); background: none; border: none;
   cursor: pointer; font-family: 'Noto Serif JP', serif; letter-spacing: 0.06em;
 }
 
@@ -285,7 +285,7 @@ body::before {
 .text-input-field {
   width: 100%; background: white; border: 1px solid var(--washi3);
   color: var(--ink); padding: 10px 12px;
-  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
   outline: none; border-radius: 4px;
 }
 .text-input-field:focus { border-color: var(--gold); }
@@ -294,7 +294,7 @@ body::before {
   margin: 12px 18px; background: transparent;
   border: 1px solid var(--red); color: var(--red);
   padding: 10px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
   letter-spacing: 0.1em; border-radius: 4px; text-align: center; transition: all 0.15s;
 }
 .finish-btn:hover { background: rgba(181,57,42,0.05); }
@@ -316,11 +316,11 @@ body::before {
   background: var(--washi3); border-radius: 2px; position: relative; overflow: hidden;
 }
 .waiting-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.5s ease; }
-.waiting-count { font-size: 13px; color: var(--ink3); letter-spacing: 0.1em; }
+.waiting-count { font-size: 16px; color: var(--ink2); letter-spacing: 0.1em; }
 .waiting-skip-btn {
-  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
-  padding: 10px 24px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px; border-radius: 4px; letter-spacing: 0.06em;
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 12px 28px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; border-radius: 4px; letter-spacing: 0.06em;
 }
 
 /* ===== フィナーレ画面 ===== */
@@ -331,7 +331,7 @@ body::before {
   font-size: clamp(1.4rem, 5vw, 2rem);
   color: var(--ink); letter-spacing: 0.15em; text-align: center;
 }
-.finale-sub { font-size: 12px; color: var(--ink3); letter-spacing: 0.12em; }
+.finale-sub { font-size: 16px; color: var(--ink2); letter-spacing: 0.12em; }
 
 .finale-frame {
   width: 100%; max-width: 640px;
@@ -340,18 +340,18 @@ body::before {
 }
 .finale-frame img { width: 100%; display: block; min-height: 200px; object-fit: cover; }
 .finale-text {
-  padding: 16px 20px; font-size: 16px; line-height: 1.9;
+  padding: 20px 24px; font-size: 20px; line-height: 1.9;
   color: var(--ink); border-top: 1px solid var(--washi3); min-height: 60px;
 }
 
 .slide-nav { display: flex; align-items: center; gap: 16px; }
 .slide-nav-btn {
   background: white; border: 1px solid var(--washi3); color: var(--ink2);
-  width: 40px; height: 40px; cursor: pointer; font-size: 16px;
+  width: 52px; height: 52px; cursor: pointer; font-size: 20px;
   border-radius: 4px; transition: all 0.15s;
 }
 .slide-nav-btn:hover { border-color: var(--gold); }
-.slide-counter { font-size: 13px; color: var(--ink3); letter-spacing: 0.1em; min-width: 60px; text-align: center; }
+.slide-counter { font-size: 17px; color: var(--ink2); letter-spacing: 0.1em; min-width: 60px; text-align: center; }
 
 .finale-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
 .finale-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--washi3); cursor: pointer; transition: all 0.2s; }
@@ -361,17 +361,17 @@ body::before {
 .btn-play {
   background: var(--red); color: white; border: none;
   padding: 12px 24px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 14px; letter-spacing: 0.12em; border-radius: 4px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.12em; border-radius: 4px;
 }
 .btn-print {
   background: white; border: 1px solid var(--washi3); color: var(--ink2);
   padding: 12px 24px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 14px; letter-spacing: 0.12em; border-radius: 4px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.12em; border-radius: 4px;
 }
 .btn-again {
   background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
   padding: 12px 24px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px; letter-spacing: 0.1em; border-radius: 4px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; letter-spacing: 0.1em; border-radius: 4px;
 }
 
 .scene-grid-wrap { width: 100%; max-width: 640px; }
@@ -384,8 +384,8 @@ body::before {
 .grid-item:hover { border-color: var(--gold); box-shadow: 0 2px 8px var(--shadow); }
 .grid-item img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
 .grid-no-img { width: 100%; aspect-ratio: 4/3; background: var(--washi2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--ink3); }
-.grid-text { padding: 6px 8px; font-size: 10px; color: var(--ink3); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.grid-num { position: absolute; top: 4px; left: 4px; font-size: 9px; color: var(--ink3); background: rgba(255,255,255,0.8); padding: 1px 5px; border-radius: 2px; }
+.grid-text { padding: 8px 10px; font-size: 13px; color: var(--ink2); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grid-num { position: absolute; top: 4px; left: 4px; font-size: 12px; color: var(--ink2); background: rgba(255,255,255,0.8); padding: 1px 5px; border-radius: 2px; }
 
 /* ポップアップ */
 .popup-overlay {
@@ -400,17 +400,77 @@ body::before {
   border: 1px solid var(--washi3);
 }
 .popup-icon { font-size: 40px; margin-bottom: 14px; }
-.popup-title { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); margin-bottom: 10px; letter-spacing: 0.08em; }
-.popup-text { font-size: 14px; color: var(--ink2); line-height: 1.8; margin-bottom: 20px; }
+.popup-title { font-family: 'Shippori Mincho', serif; font-size: 24px; color: var(--ink); margin-bottom: 10px; letter-spacing: 0.08em; }
+.popup-text { font-size: 17px; color: var(--ink); line-height: 1.8; margin-bottom: 20px; }
 .popup-btns { display: flex; flex-direction: column; gap: 8px; }
 .popup-btn-main {
-  background: var(--red); color: white; border: none; padding: 13px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 15px; letter-spacing: 0.1em; border-radius: 4px;
+  background: var(--red); color: white; border: none; padding: 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.1em; border-radius: 4px;
 }
 .popup-btn-sub {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; letter-spacing: 0.06em; border-radius: 4px;
+}
+
+/* テキスト確認ポップアップ（シニア向け大きめ） */
+.confirm-card {
+  background: var(--washi); max-width: 500px; width: 100%;
+  padding: 32px 28px;
+  box-shadow: 0 8px 40px rgba(42,35,26,0.3);
+  border: 1px solid var(--washi3);
+  display: flex; flex-direction: column; gap: 20px;
+}
+.confirm-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 18px; color: var(--ink);
+  letter-spacing: 0.1em; text-align: center;
+}
+.confirm-text-display {
+  background: white; border: 2px solid var(--gold);
+  border-radius: 6px; padding: 18px 20px;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 22px; line-height: 1.8;
+  color: var(--ink); min-height: 80px;
+  word-break: break-all;
+}
+.confirm-edit-area {
+  display: none; flex-direction: column; gap: 8px;
+}
+.confirm-edit-area.visible { display: flex; }
+.confirm-edit-label {
+  font-size: 12px; color: var(--ink3); letter-spacing: 0.1em;
+}
+.confirm-textarea {
+  width: 100%; background: white; border: 2px solid var(--gold);
+  color: var(--ink); padding: 14px 16px;
+  font-family: 'Noto Serif JP', serif; font-size: 20px;
+  outline: none; resize: vertical; min-height: 100px;
+  border-radius: 6px; line-height: 1.8;
+}
+.confirm-textarea:focus { border-color: var(--red); }
+.confirm-btns { display: flex; flex-direction: column; gap: 10px; }
+.confirm-btn-ok {
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 20px;
+  letter-spacing: 0.15em; border-radius: 6px;
+  transition: opacity 0.2s;
+}
+.confirm-btn-ok:hover { opacity: 0.88; }
+.confirm-btn-edit {
+  background: white; border: 2px solid var(--ink3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.1em; border-radius: 6px;
+  transition: all 0.2s;
+}
+.confirm-btn-edit:hover { border-color: var(--gold); color: var(--ink); }
+.confirm-btn-cancel {
   background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
-  padding: 11px; cursor: pointer;
-  font-family: 'Noto Serif JP', serif; font-size: 13px; letter-spacing: 0.06em; border-radius: 4px;
+  padding: 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  letter-spacing: 0.06em; border-radius: 4px;
 }
 
 .toast {
@@ -542,7 +602,7 @@ body::before {
         <div class="thinking-dot"></div>
         <div class="thinking-dot"></div>
         <div class="thinking-dot"></div>
-        <span style="font-size:12px;color:var(--gold);letter-spacing:0.08em;margin-left:4px;">AIが問いを考えています…</span>
+        <span style="font-size:16px;color:var(--gold);letter-spacing:0.08em;margin-left:4px;">AIが問いを考えています…</span>
       </div>
 
       <div class="gen-progress" id="gen-progress" style="display:none">
@@ -643,6 +703,34 @@ body::before {
     <div class="popup-btns">
       <button class="popup-btn-main" onclick="finishStory()">絵本を作る</button>
       <button class="popup-btn-sub" onclick="hidePopup('popup-finish')">まだ続ける</button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：テキスト確認（送信前） -->
+<div id="popup-confirm-text" class="popup-overlay hidden">
+  <div class="confirm-card">
+    <div class="confirm-title">✅ このことばで合っていますか？</div>
+
+    <!-- 表示モード -->
+    <div class="confirm-text-display" id="confirm-text-display"></div>
+
+    <!-- 編集モード（修正ボタンを押したら表示） -->
+    <div class="confirm-edit-area" id="confirm-edit-area">
+      <div class="confirm-edit-label">▼ 修正してください</div>
+      <textarea class="confirm-textarea" id="confirm-textarea"></textarea>
+    </div>
+
+    <div class="confirm-btns">
+      <button class="confirm-btn-ok" id="confirm-btn-ok" onclick="confirmTextOK()">
+        ✓ &nbsp;はい、合っています
+      </button>
+      <button class="confirm-btn-edit" id="confirm-btn-edit" onclick="confirmTextEdit()">
+        ✏️ &nbsp;修正する
+      </button>
+      <button class="confirm-btn-cancel" onclick="confirmTextCancel()">
+        やり直す（もう一度録音）
+      </button>
     </div>
   </div>
 </div>
@@ -954,18 +1042,27 @@ function showAIQuestion(text) {
   document.getElementById('ai-question-box').style.display = 'block';
   document.getElementById('ai-question-text').textContent = text;
   // 自動読み上げ（録音中でなければ）
-  // BUG FIX: 読み上げ中はrecord-areaを一時的に無効化し、終わったら有効化
+  // BUG FIX: showAIThinkingが既にpointerEventsを管理しているため
+  //          ここでは読み上げ中のみ一時的に追加無効化し、
+  //          AIThinkingが非表示かつ録音中でない時だけ復旧する
   if (!state.isRecording) {
     const ra = document.getElementById('record-area');
-    ra.style.pointerEvents = 'none';
-    ra.style.opacity = '0.5';
-    speakText(text).then(() => {
-      // AIThinkingが表示中でなければ操作を復旧
-      if (document.getElementById('ai-thinking').style.display === 'none') {
-        ra.style.pointerEvents = 'auto';
-        ra.style.opacity = '1';
-      }
-    });
+    // 現在showAIThinkingで既に無効化中でない場合のみ追加で無効化
+    if (ra.style.pointerEvents !== 'none') {
+      ra.style.pointerEvents = 'none';
+      ra.style.opacity = '0.5';
+      speakText(text).then(() => {
+        // AIThinkingが非表示かつ録音中でない場合のみ復旧
+        const thinking = document.getElementById('ai-thinking');
+        if (thinking.style.display === 'none' && !state.isRecording) {
+          ra.style.pointerEvents = 'auto';
+          ra.style.opacity = '1';
+        }
+      });
+    } else {
+      // showAIThinkingが管理中→読み上げのみ行い、復旧はshowAIThinkingに任せる
+      speakText(text);
+    }
   }
 }
 
@@ -1089,36 +1186,47 @@ async function submitTurn() {
 
   document.getElementById('btn-send').disabled = true;
 
+  // ── テキスト確認ポップアップ ────────────────────────────────
+  const confirmed = await showConfirmTextPopup(text);
+  if (!confirmed.ok) {
+    // 「やり直す」→ 録音状態をリセットして戻る
+    clearInput();
+    document.getElementById('btn-send').disabled = false;
+    return;
+  }
+  // 確認・修正済みのテキストを使用
+  state.recognizedText = confirmed.text;
+  const confirmedText = confirmed.text;
+  // ────────────────────────────────────────────────────────────
+
   // ── フィルタリング判定 ──────────────────────────────────────
   // Anthropicキーがある場合のみ判定（ない場合はそのまま通す）
   if (state.keys.anthropic) {
     showAIThinking(true);
-    const isNarrative = await isMemoryNarrative(text);
+    const isNarrative = await isMemoryNarrative(confirmedText);
     showAIThinking(false);
 
     if (!isNarrative) {
       // 語りでない → ユーザーに確認
-      const proceed = await showFilterPopup(text);
+      const proceed = await showFilterPopup(confirmedText);
       if (!proceed) {
         // スキップ：入力をクリアして次の問いへ進む
         clearInput();
         document.getElementById('btn-send').disabled = false;
-        // 現在の問いかけを再表示（そのまま継続）
         if (state.currentQuestion) {
           showAIQuestion(state.currentQuestion);
         }
         updateSpeakerBadge();
         return;
       }
-      // 「入れる」を選んだ場合はそのまま続行
     }
   }
   // ────────────────────────────────────────────────────────────
 
   const player = state.players[state.currentPlayerIdx];
-  addStoryBubble(player, text, false);
+  addStoryBubble(player, confirmedText, false);
 
-  const turnData = { playerIdx: state.currentPlayerIdx, text, imageUrl: null };
+  const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null };
   state.turns.push(turnData);
   state.totalTurns++;
 
@@ -1126,7 +1234,7 @@ async function submitTurn() {
   updateTurnDots();
 
   if (state.keys.openai) {
-    enqueueImage(text, state.turns.length - 1);
+    enqueueImage(confirmedText, state.turns.length - 1);
   }
 
   // 次のプレイヤーへ
@@ -1510,21 +1618,52 @@ function gotoSlide(idx) {
 // ============================================================
 //  PLAYBACK
 // ============================================================
+// 絵本用：昔ばなし口調に変換してから読み上げる
+async function speakStoryText(text) {
+  let narration = text;
+
+  // Anthropicキーがあれば口調を変換（停止済みならスキップ）
+  if (state.keys.anthropic && isPlaying) {
+    try {
+      const prompt = `以下の思い出のテキストを、日本昔ばなしのナレーターのような語り口調に変換してください。
+
+条件：
+- ゆっくり、温かく、懐かしさが伝わる口調
+- 「〜でございました」「〜でありました」「〜じゃったのです」などの昔ばなし調の語尾
+- 内容・事実は一切変えない（口調だけ変える）
+- 句読点を多めに入れて、自然な間が生まれるように
+- 変換後のテキストのみ出力（説明不要）
+
+テキスト：「${text}」`;
+      narration = await callAnthropic(prompt, 300);
+    } catch(e) {
+      console.warn('narration convert failed, using original');
+    }
+  }
+
+  // BUG FIX: 変換中に停止された場合は読み上げをスキップ
+  if (!isPlaying) return;
+
+  await speakTextWithVoice(narration, 'story');
+}
+
 async function playbackAll() {
   if (isPlaying) {
     isPlaying = false;
-    stopCurrentSpeech(); // BUG FIX: Google TTS含めて全音声を止める
+    stopCurrentSpeech();
     document.getElementById('btn-play').textContent = '▶ 再生する';
     return;
   }
   isPlaying = true;
   document.getElementById('btn-play').textContent = '⏹ 停止';
+
   for (let i = 0; i < state.turns.length; i++) {
     if (!isPlaying) break;
     gotoSlide(i);
-    await speakText(state.turns[i].text);
-    await sleep(800);
+    await speakStoryText(state.turns[i].text);
+    await sleep(1200); // 昔ばなし風にページ間の間を長めに
   }
+
   isPlaying = false;
   document.getElementById('btn-play').textContent = '▶ 再生する';
 }
@@ -1551,12 +1690,43 @@ function stopCurrentSpeech() {
   if (_ttsResolve) { _ttsResolve(); _ttsResolve = null; }
 }
 
-async function speakText(text) {
-  // 前の音声を止めてから開始（重複防止）
+// mode: 'question'（AIの問いかけ）| 'story'（絵本読み上げ）
+// story時は性別・年齢に合った声＋ゆっくりめに
+function getTTSVoiceConfig(mode) {
+  if (mode === 'story') {
+    // 絵本読み上げ：語り手の性別・年齢に合わせた声
+    const isElderly = state.age >= 60;
+    if (state.gender === 'male') {
+      return {
+        name: isElderly ? 'ja-JP-Neural2-C' : 'ja-JP-Neural2-D',
+        ssmlGender: 'MALE',
+        speakingRate: 0.78,  // 昔ばなし風にゆっくり
+        pitch: isElderly ? -2.0 : 0.0,  // 高齢男性は少し低く
+      };
+    } else {
+      return {
+        name: isElderly ? 'ja-JP-Neural2-B' : 'ja-JP-Neural2-A',
+        ssmlGender: 'FEMALE',
+        speakingRate: 0.78,
+        pitch: isElderly ? -1.0 : 0.0,
+      };
+    }
+  }
+  // 問いかけ（AI coach）：温かみのある女性の声・標準速度
+  return {
+    name: 'ja-JP-Neural2-B',
+    ssmlGender: 'FEMALE',
+    speakingRate: 0.90,
+    pitch: 0.0,
+  };
+}
+
+// mode省略時は 'question' 扱い
+async function speakTextWithVoice(text, mode = 'question') {
   stopCurrentSpeech();
 
-  // Google Cloud TTSキーがあればGoogle TTS
   if (state.keys.google) {
+    const voiceConfig = getTTSVoiceConfig(mode);
     try {
       const res = await fetch(
         `https://texttospeech.googleapis.com/v1/text:synthesize?key=${state.keys.google}`,
@@ -1567,13 +1737,13 @@ async function speakText(text) {
             input: { text },
             voice: {
               languageCode: 'ja-JP',
-              name: 'ja-JP-Neural2-B',
-              ssmlGender: 'FEMALE'
+              name: voiceConfig.name,
+              ssmlGender: voiceConfig.ssmlGender,
             },
             audioConfig: {
               audioEncoding: 'MP3',
-              speakingRate: 0.90,
-              pitch: 0.0
+              speakingRate: voiceConfig.speakingRate,
+              pitch: voiceConfig.pitch,
             }
           })
         }
@@ -1584,7 +1754,6 @@ async function speakText(text) {
       const bytes = new Uint8Array(binary.length);
       for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-      // BUG FIX: AudioContextを変数に保持してclose()できるようにする
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       _ttsAudioCtx = audioCtx;
       const decoded = await audioCtx.decodeAudioData(bytes.buffer);
@@ -1596,7 +1765,6 @@ async function speakText(text) {
       return new Promise(resolve => {
         _ttsResolve = resolve;
         src.onended = () => {
-          // BUG FIX: 再生終了後にAudioContextをcloseしてリソース解放
           try { audioCtx.close(); } catch(e) {}
           if (_ttsAudioCtx === audioCtx) _ttsAudioCtx = null;
           if (_ttsAudioSrc === src) _ttsAudioSrc = null;
@@ -1613,6 +1781,7 @@ async function speakText(text) {
   }
 
   // フォールバック：ブラウザ内蔵 SpeechSynthesis
+  const fallbackRate = mode === 'story' ? 0.72 : 0.82;
   return new Promise(resolve => {
     if (!('speechSynthesis' in window)) { resolve(); return; }
     window.speechSynthesis.cancel();
@@ -1621,7 +1790,7 @@ async function speakText(text) {
     const doSpeak = () => {
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'ja-JP';
-      utter.rate = 0.82;
+      utter.rate = fallbackRate;
       utter.pitch = 1.0;
       const voices = window.speechSynthesis.getVoices();
       const jaVoice = voices.find(v => v.lang.startsWith('ja'));
@@ -1641,6 +1810,11 @@ async function speakText(text) {
   });
 }
 
+// 後方互換：speakText は問いかけ用（'question'モード）のラッパー
+function speakText(text) {
+  return speakTextWithVoice(text, 'question');
+}
+
 // ============================================================
 //  PRINT
 // ============================================================
@@ -1650,13 +1824,13 @@ function printStory() {
 <style>
 body{font-family:'Noto Serif JP',serif;background:white;color:#2a231a;max-width:800px;margin:0 auto;padding:20px;}
 h1{font-size:28px;text-align:center;color:#b5392a;margin-bottom:8px;letter-spacing:0.12em;}
-.subtitle{text-align:center;color:#8a7a64;font-size:13px;margin-bottom:30px;letter-spacing:0.1em;}
+.subtitle{text-align:center;color:#5c4f3a;font-size:16px;margin-bottom:30px;letter-spacing:0.1em;}
 .scene{page-break-inside:avoid;margin-bottom:32px;border:1px solid #e4d9c8;padding:0 0 16px;}
 .scene img{width:100%;display:block;}
 .scene-no-img{width:100%;height:180px;background:#f0e9db;display:flex;align-items:center;justify-content:center;font-size:40px;}
-.scene-text{padding:14px 18px;font-size:16px;line-height:1.9;}
-.scene-num{font-size:11px;color:#8a7a64;padding:10px 18px 0;letter-spacing:0.08em;}
-footer{text-align:center;font-size:11px;color:#8a7a64;margin-top:40px;border-top:1px solid #e4d9c8;padding-top:16px;}
+.scene-text{padding:18px 22px;font-size:20px;line-height:2.0;}
+.scene-num{font-size:14px;color:#5c4f3a;padding:12px 22px 0;letter-spacing:0.08em;}
+footer{text-align:center;font-size:14px;color:#5c4f3a;margin-top:40px;border-top:1px solid #e4d9c8;padding-top:16px;}
 @media print{body{max-width:none;}}
 </style></head><body>
 <h1>${escHtml(state.storyTitle || '思い出の絵本')}</h1>
@@ -1688,7 +1862,12 @@ ${turn.imageUrl ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">` : '<div c
 // ============================================================
 function resetAll() {
   if (isPlaying) { isPlaying = false; }
-  stopCurrentSpeech(); // BUG FIX: Google TTS含めて全音声を止める
+  stopCurrentSpeech();
+  // BUG FIX: 残留Promiseをクリア（誤作動防止）
+  if (_confirmResolve) { _confirmResolve({ ok: false, text: '' }); _confirmResolve = null; }
+  if (_filterResolve) { _filterResolve(false); _filterResolve = null; }
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  document.getElementById('popup-filter').classList.add('hidden');
   state.turns = [];
   state.totalTurns = 0;
   state.maxTurns = 8;
@@ -1734,6 +1913,62 @@ async function isMemoryNarrative(text) {
     // API失敗時は語りとして扱う（スキップしない）
     return true;
   }
+}
+
+// ============================================================
+//  TEXT CONFIRM POPUP（送信前テキスト確認）
+// ============================================================
+let _confirmResolve = null;
+
+function showConfirmTextPopup(text) {
+  // 表示モードで開く
+  document.getElementById('confirm-text-display').textContent = text;
+  document.getElementById('confirm-textarea').value = text;
+  document.getElementById('confirm-edit-area').classList.remove('visible');
+  document.getElementById('confirm-btn-edit').textContent = '✏️ 　修正する';
+
+  document.getElementById('popup-confirm-text').classList.remove('hidden');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+
+function confirmTextOK() {
+  // 編集モードの場合は編集後のテキストを使う
+  const editArea = document.getElementById('confirm-edit-area');
+  let finalText;
+  if (editArea.classList.contains('visible')) {
+    finalText = document.getElementById('confirm-textarea').value.trim();
+    if (!finalText) return; // 空は送れない
+  } else {
+    finalText = document.getElementById('confirm-text-display').textContent;
+  }
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  if (_confirmResolve) { _confirmResolve({ ok: true, text: finalText }); _confirmResolve = null; }
+}
+
+function confirmTextEdit() {
+  const editArea = document.getElementById('confirm-edit-area');
+  const btn = document.getElementById('confirm-btn-edit');
+  if (!editArea.classList.contains('visible')) {
+    // 編集モードに切り替え
+    editArea.classList.add('visible');
+    btn.textContent = '✓ 　修正完了';
+    document.getElementById('confirm-textarea').focus();
+    // カーソルを末尾に
+    const ta = document.getElementById('confirm-textarea');
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
+  } else {
+    // 「修正完了」ボタンとして機能 → OKと同じ
+    confirmTextOK();
+  }
+}
+
+function confirmTextCancel() {
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  // BUG FIX: やり直し時に古いテキストをクリア
+  state.recognizedText = '';
+  const ta = document.getElementById('recognized-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  if (_confirmResolve) { _confirmResolve({ ok: false, text: '' }); _confirmResolve = null; }
 }
 
 // フィルタリングポップアップのコールバック
