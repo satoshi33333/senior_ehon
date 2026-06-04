@@ -115,6 +115,8 @@ body::before {
 
 .members-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
 .members-label { font-size: 13px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 12px; text-align: center; }
+.gender-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.gender-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .member-btn {
   background: white; border: 1.5px solid var(--washi3);
@@ -456,6 +458,19 @@ body::before {
 
   <div class="title-divider"></div>
 
+  <!-- 性別選択 -->
+  <div class="gender-section">
+    <div class="members-label">語り手の性別を教えてください</div>
+    <div class="gender-grid">
+      <button class="member-btn active" id="gender-male" onclick="selectGender('male')">
+        <span class="member-num">男性</span>おじいちゃん・おじさん
+      </button>
+      <button class="member-btn" id="gender-female" onclick="selectGender('female')">
+        <span class="member-num">女性</span>おばあちゃん・おばさん
+      </button>
+    </div>
+  </div>
+
   <div class="members-section">
     <div class="members-label">今日は何人で語りますか？</div>
     <div class="members-grid">
@@ -633,6 +648,7 @@ const AVATARS = ['🌸','🍂','🌿','🌾','🌼','🍁','🎋','🌺'];
 let state = {
   keys: { openai: '', anthropic: '', google: '' },
   memberCount: 1,
+  gender: 'male',   // 'male' | 'female'
   players: [],
   currentPlayerIdx: 0,
   turns: [],
@@ -690,6 +706,15 @@ function setKeyStatus(type, ok) {
       : '未設定';
     el.className = 'key-status';
   }
+}
+
+// ============================================================
+//  GENDER SELECTION
+// ============================================================
+function selectGender(g) {
+  state.gender = g;
+  document.getElementById('gender-male').classList.toggle('active', g === 'male');
+  document.getElementById('gender-female').classList.toggle('active', g === 'female');
 }
 
 // ============================================================
@@ -1217,11 +1242,29 @@ function updateGenProgress() {
 
 async function generateImage(text, turnIdx) {
   const storyContext = state.turns.slice(0, turnIdx + 1).map(t => t.text).join(' ');
+  const narratorGender = state.gender === 'male' ? '男の子（主人公・語り手）' : '女の子（主人公・語り手）';
+  const narratorAdult = state.gender === 'male' ? '老年の男性（語り手の現在の姿）' : '老年の女性（語り手の現在の姿）';
+
+  // テキストから登場場面を推定してキャラクター設定を固定する
   const prompt = `昭和30〜50年代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調、懐かしい日本の風景や情景。
-場面:「${text}」
-背景文脈:「${storyContext.substring(0, 200)}」
-構図: 横長4:3、絵本の1ページ。温かく郷愁を感じる情景。
-絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
+
+【キャラクター設定（必ず一貫して守ること）】
+- 語り手（子供時代）: ${narratorGender}、黒髪、昭和の子供らしい服装
+- 語り手（現在・大人）: ${narratorAdult}、温かみのある表情
+- お母さん: 40〜50代の日本人女性、黒髪をまとめている、和やかな表情
+- おばあさん: 70代の日本人女性、白髪、穏やかな笑顔
+
+【この場面のテキスト】
+「${text}」
+
+【これまでの文脈】
+「${storyContext.substring(0, 150)}」
+
+【構図の指示】
+- 横長4:3、絵本の1ページ
+- テキストの内容に合った登場人物を選んで描く（全員出す必要はない）
+- 温かく郷愁を感じる情景
+- 絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
 
   const res = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
