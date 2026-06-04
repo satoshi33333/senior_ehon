@@ -445,6 +445,15 @@ body::before {
     <div class="key-status" id="status-anthropic">未設定</div>
   </div>
 
+  <div class="key-section">
+    <span class="key-label">■ Google Cloud APIキー（自然な日本語音声に使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-google" type="password" placeholder="AIza..." />
+      <button class="key-btn" onclick="saveKey('google')">保存</button>
+    </div>
+    <div class="key-status" id="status-google">未設定（省略可・省略時はブラウザ音声）</div>
+  </div>
+
   <div class="title-divider"></div>
 
   <div class="members-section">
@@ -622,7 +631,7 @@ body::before {
 const AVATARS = ['🌸','🍂','🌿','🌾','🌼','🍁','🎋','🌺'];
 
 let state = {
-  keys: { openai: '', anthropic: '' },
+  keys: { openai: '', anthropic: '', google: '' },
   memberCount: 1,
   players: [],
   currentPlayerIdx: 0,
@@ -649,8 +658,10 @@ let isPlaying = false;
 (function init() {
   const ok = localStorage.getItem('ehon_openai') || '';
   const ak = localStorage.getItem('ehon_anthropic') || '';
+  const gk = localStorage.getItem('ehon_google') || '';
   if (ok) { state.keys.openai = ok; setKeyStatus('openai', true); }
   if (ak) { state.keys.anthropic = ak; setKeyStatus('anthropic', true); }
+  if (gk) { state.keys.google = gk; setKeyStatus('google', true); }
   // voiceschangedを早めに登録してキャッシュさせる
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
@@ -670,8 +681,15 @@ function saveKey(type) {
 
 function setKeyStatus(type, ok) {
   const el = document.getElementById('status-' + type);
-  el.textContent = ok ? '設定済み ✓' : '未設定';
-  el.className = 'key-status' + (ok ? ' ok' : '');
+  if (ok) {
+    el.textContent = '設定済み ✓';
+    el.className = 'key-status ok';
+  } else {
+    el.textContent = type === 'google'
+      ? '未設定（省略可・省略時はブラウザ音声）'
+      : '未設定';
+    el.className = 'key-status';
+  }
 }
 
 // ============================================================
@@ -866,8 +884,18 @@ function showAIQuestion(text) {
   document.getElementById('ai-question-box').style.display = 'block';
   document.getElementById('ai-question-text').textContent = text;
   // 自動読み上げ（録音中でなければ）
+  // BUG FIX: 読み上げ中はrecord-areaを一時的に無効化し、終わったら有効化
   if (!state.isRecording) {
-    speakText(text);
+    const ra = document.getElementById('record-area');
+    ra.style.pointerEvents = 'none';
+    ra.style.opacity = '0.5';
+    speakText(text).then(() => {
+      // AIThinkingが表示中でなければ操作を復旧
+      if (document.getElementById('ai-thinking').style.display === 'none') {
+        ra.style.pointerEvents = 'auto';
+        ra.style.opacity = '1';
+      }
+    });
   }
 }
 
@@ -1311,7 +1339,7 @@ function gotoSlide(idx) {
 async function playbackAll() {
   if (isPlaying) {
     isPlaying = false;
-    window.speechSynthesis && window.speechSynthesis.cancel();
+    stopCurrentSpeech(); // BUG FIX: Google TTS含めて全音声を止める
     document.getElementById('btn-play').textContent = '▶ 再生する';
     return;
   }
@@ -1327,11 +1355,94 @@ async function playbackAll() {
   document.getElementById('btn-play').textContent = '▶ 再生する';
 }
 
-// BUG FIX: voicesが空の場合はonvoiceschangedで待つ
+// ── 音声再生管理 ─────────────────────────────────────────────────
+let _ttsAudioCtx = null;   // 現在のAudioContext（Google TTS用）
+let _ttsAudioSrc = null;   // 現在のBufferSourceNode
+let _ttsResolve = null;    // 現在の再生Promiseのresolve
+
+// 再生中の音声を即座に停止する
+function stopCurrentSpeech() {
+  // Google TTS停止
+  if (_ttsAudioSrc) {
+    try { _ttsAudioSrc.onended = null; _ttsAudioSrc.stop(); } catch(e) {}
+    _ttsAudioSrc = null;
+  }
+  if (_ttsAudioCtx) {
+    try { _ttsAudioCtx.close(); } catch(e) {}
+    _ttsAudioCtx = null;
+  }
+  // ブラウザTTS停止
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  // 保留中のresolveを呼んで詰まりを解消
+  if (_ttsResolve) { _ttsResolve(); _ttsResolve = null; }
+}
+
 async function speakText(text) {
+  // 前の音声を止めてから開始（重複防止）
+  stopCurrentSpeech();
+
+  // Google Cloud TTSキーがあればGoogle TTS
+  if (state.keys.google) {
+    try {
+      const res = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${state.keys.google}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text },
+            voice: {
+              languageCode: 'ja-JP',
+              name: 'ja-JP-Neural2-B',
+              ssmlGender: 'FEMALE'
+            },
+            audioConfig: {
+              audioEncoding: 'MP3',
+              speakingRate: 0.90,
+              pitch: 0.0
+            }
+          })
+        }
+      );
+      if (!res.ok) throw new Error('Google TTS failed: ' + res.status);
+      const data = await res.json();
+      const binary = atob(data.audioContent);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+      // BUG FIX: AudioContextを変数に保持してclose()できるようにする
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      _ttsAudioCtx = audioCtx;
+      const decoded = await audioCtx.decodeAudioData(bytes.buffer);
+      const src = audioCtx.createBufferSource();
+      _ttsAudioSrc = src;
+      src.buffer = decoded;
+      src.connect(audioCtx.destination);
+
+      return new Promise(resolve => {
+        _ttsResolve = resolve;
+        src.onended = () => {
+          // BUG FIX: 再生終了後にAudioContextをcloseしてリソース解放
+          try { audioCtx.close(); } catch(e) {}
+          if (_ttsAudioCtx === audioCtx) _ttsAudioCtx = null;
+          if (_ttsAudioSrc === src) _ttsAudioSrc = null;
+          _ttsResolve = null;
+          resolve();
+        };
+        src.start(0);
+      });
+    } catch(e) {
+      console.warn('Google TTS error, falling back to browser TTS:', e);
+      _ttsAudioCtx = null;
+      _ttsAudioSrc = null;
+    }
+  }
+
+  // フォールバック：ブラウザ内蔵 SpeechSynthesis
   return new Promise(resolve => {
     if (!('speechSynthesis' in window)) { resolve(); return; }
     window.speechSynthesis.cancel();
+    _ttsResolve = resolve;
 
     const doSpeak = () => {
       const utter = new SpeechSynthesisUtterance(text);
@@ -1341,8 +1452,8 @@ async function speakText(text) {
       const voices = window.speechSynthesis.getVoices();
       const jaVoice = voices.find(v => v.lang.startsWith('ja'));
       if (jaVoice) utter.voice = jaVoice;
-      utter.onend = resolve;
-      utter.onerror = resolve;
+      utter.onend = () => { _ttsResolve = null; resolve(); };
+      utter.onerror = () => { _ttsResolve = null; resolve(); };
       window.speechSynthesis.speak(utter);
     };
 
@@ -1351,7 +1462,6 @@ async function speakText(text) {
       doSpeak();
     } else {
       window.speechSynthesis.onvoiceschanged = () => { doSpeak(); };
-      // 2秒待っても来なければそのまま実行
       setTimeout(doSpeak, 2000);
     }
   });
@@ -1403,7 +1513,8 @@ ${turn.imageUrl ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">` : '<div c
 //  RESET
 // ============================================================
 function resetAll() {
-  if (isPlaying) { isPlaying = false; window.speechSynthesis && window.speechSynthesis.cancel(); }
+  if (isPlaying) { isPlaying = false; }
+  stopCurrentSpeech(); // BUG FIX: Google TTS含めて全音声を止める
   state.turns = [];
   state.totalTurns = 0;
   state.maxTurns = 8;
