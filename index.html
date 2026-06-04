@@ -117,6 +117,17 @@ body::before {
 .members-label { font-size: 13px; letter-spacing: 0.12em; color: var(--ink2); margin-bottom: 12px; text-align: center; }
 .gender-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
 .gender-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.age-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.age-row { display: flex; align-items: center; gap: 12px; }
+.age-label-text { font-size: 13px; color: var(--ink2); letter-spacing: 0.08em; white-space: nowrap; }
+.age-input {
+  width: 90px; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 500;
+  outline: none; border-radius: 4px; text-align: center;
+}
+.age-input:focus { border-color: var(--gold); }
+.age-unit { font-size: 15px; color: var(--ink2); letter-spacing: 0.08em; }
 .members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .member-btn {
   background: white; border: 1.5px solid var(--washi3);
@@ -471,6 +482,16 @@ body::before {
     </div>
   </div>
 
+  <div class="age-section">
+    <div class="members-label">今のご年齢を教えてください</div>
+    <div class="age-row">
+      <span class="age-label-text">現在</span>
+      <input class="age-input" id="narrator-age" type="number" min="40" max="100"
+        value="70" oninput="onAgeInput(this.value)" />
+      <span class="age-unit">歳</span>
+    </div>
+  </div>
+
   <div class="members-section">
     <div class="members-label">今日は何人で語りますか？</div>
     <div class="members-grid">
@@ -626,6 +647,19 @@ body::before {
   </div>
 </div>
 
+<!-- ポップアップ：フィルタリング確認 -->
+<div id="popup-filter" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🤔</div>
+    <div class="popup-title" id="filter-title">思い出の語りではないようです</div>
+    <div class="popup-text" id="filter-text">この内容は絵本のページにしますか？</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="filterProceed()">このまま絵本に入れる</button>
+      <button class="popup-btn-sub" onclick="filterSkip()">スキップして次の問いへ</button>
+    </div>
+  </div>
+</div>
+
 <!-- ポップアップ：自動終了 -->
 <div id="popup-continue" class="popup-overlay hidden">
   <div class="popup-card">
@@ -649,6 +683,7 @@ let state = {
   keys: { openai: '', anthropic: '', google: '' },
   memberCount: 1,
   gender: 'male',   // 'male' | 'female'
+  age: 70,           // 語り手の現在の年齢
   players: [],
   currentPlayerIdx: 0,
   turns: [],
@@ -658,6 +693,7 @@ let state = {
   recognizedText: '',
   currentQuestion: '',
   storyTitle: '',
+  pendingTurnText: '',   // フィルタリング判定中のテキスト一時保存
 };
 
 let bgGenCompleted = 0;
@@ -717,6 +753,11 @@ function selectGender(g) {
   document.getElementById('gender-female').classList.toggle('active', g === 'female');
 }
 
+function onAgeInput(val) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 1 && n <= 120) state.age = n;
+}
+
 // ============================================================
 //  MEMBER SELECTION
 // ============================================================
@@ -759,6 +800,10 @@ function startStory() {
       avatar: AVATARS[i],
     });
   }
+
+  // 年齢の読み取り
+  const ageVal = parseInt(document.getElementById('narrator-age')?.value, 10);
+  if (!isNaN(ageVal) && ageVal >= 1 && ageVal <= 120) state.age = ageVal;
 
   // BUG FIX: maxTurnsも確実にリセット
   state.turns = [];
@@ -1044,6 +1089,32 @@ async function submitTurn() {
 
   document.getElementById('btn-send').disabled = true;
 
+  // ── フィルタリング判定 ──────────────────────────────────────
+  // Anthropicキーがある場合のみ判定（ない場合はそのまま通す）
+  if (state.keys.anthropic) {
+    showAIThinking(true);
+    const isNarrative = await isMemoryNarrative(text);
+    showAIThinking(false);
+
+    if (!isNarrative) {
+      // 語りでない → ユーザーに確認
+      const proceed = await showFilterPopup(text);
+      if (!proceed) {
+        // スキップ：入力をクリアして次の問いへ進む
+        clearInput();
+        document.getElementById('btn-send').disabled = false;
+        // 現在の問いかけを再表示（そのまま継続）
+        if (state.currentQuestion) {
+          showAIQuestion(state.currentQuestion);
+        }
+        updateSpeakerBadge();
+        return;
+      }
+      // 「入れる」を選んだ場合はそのまま続行
+    }
+  }
+  // ────────────────────────────────────────────────────────────
+
   const player = state.players[state.currentPlayerIdx];
   addStoryBubble(player, text, false);
 
@@ -1242,17 +1313,77 @@ function updateGenProgress() {
 
 async function generateImage(text, turnIdx) {
   const storyContext = state.turns.slice(0, turnIdx + 1).map(t => t.text).join(' ');
-  const narratorGender = state.gender === 'male' ? '男の子（主人公・語り手）' : '女の子（主人公・語り手）';
-  const narratorAdult = state.gender === 'male' ? '老年の男性（語り手の現在の姿）' : '老年の女性（語り手の現在の姿）';
+  const narratorGender = state.gender === 'male' ? '男の子' : '女の子';
+  const narratorGenderTeen = state.gender === 'male' ? '男子中学生・高校生' : '女子中学生・高校生';
+  const narratorAdult = state.gender === 'male' ? '老年の男性（語り手の現在の姿・不要なら描かない）' : '老年の女性（語り手の現在の姿・不要なら描かない）';
 
-  // テキストから登場場面を推定してキャラクター設定を固定する
-  const prompt = `昭和30〜50年代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調、懐かしい日本の風景や情景。
+  // テキストから年齢・年代を推定
+  const ageHint = (() => {
+    if (/幼稚園|保育園|幼い|小さい頃|3歳|4歳|5歳/.test(text)) return '幼児（4〜6歳）';
+    if (/小学|低学年|1年|2年|3年生/.test(text)) return '小学生低学年（7〜9歳）';
+    if (/小学|高学年|4年|5年|6年生/.test(text)) return '小学生高学年（10〜12歳）';
+    if (/中学|13歳|14歳|15歳/.test(text)) return '中学生（13〜15歳）';
+    if (/高校|16歳|17歳|18歳/.test(text)) return '高校生（16〜18歳）';
+    if (/大学|20歳|成人|社会人|就職|仕事/.test(text)) return '青年（20代）';
+    return null;
+  })();
+
+  // 語り手の年齢から各時代の年を動的に計算
+  const currentYear = 2026;
+  const birthYear = currentYear - state.age;
+  const eraHint = (() => {
+    const calcYear = (age) => birthYear + age;
+    const toWareki = (y) => {
+      if (y >= 1989) return `平成${y - 1988}年（${y}年）頃`;
+      if (y >= 1926) return `昭和${y - 1925}年（${y}年）頃`;
+      return `${y}年頃`;
+    };
+    if (/幼稚園|保育園|幼い|小さい頃/.test(text)) {
+      const y = calcYear(5);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/小学/.test(text)) {
+      const y = calcYear(9);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/中学/.test(text)) {
+      const y = calcYear(14);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/高校/.test(text)) {
+      const y = calcYear(17);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/大学/.test(text)) {
+      const y = calcYear(20);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/就職|社会人|仕事/.test(text)) {
+      const y = calcYear(23);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    // 時代が不明な場合はおおよその範囲
+    const y1 = calcYear(6); const y2 = calcYear(22);
+    return `${toWareki(y1)}〜${toWareki(y2)}頃の日本の風景・服装・生活用品`;
+  })();
+
+  const ageDesc = ageHint
+    ? `語り手はこの場面では${ageHint}の${narratorGender}として描く`
+    : `語り手はこの場面に応じた年齢の${narratorGender}または${narratorGenderTeen}として描く（現在の老年の姿は不要）`;
+
+  const prompt = `昭和時代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調。
+
+【時代設定】
+${eraHint}の日本の風景・服装・生活用品を忠実に再現する
 
 【キャラクター設定（必ず一貫して守ること）】
-- 語り手（子供時代）: ${narratorGender}、黒髪、昭和の子供らしい服装
-- 語り手（現在・大人）: ${narratorAdult}、温かみのある表情
+- 語り手: ${ageDesc}、黒髪
+- ${narratorAdult}
 - お母さん: 40〜50代の日本人女性、黒髪をまとめている、和やかな表情
 - おばあさん: 70代の日本人女性、白髪、穏やかな笑顔
+- お父さん: 40〜50代の日本人男性、昭和のサラリーマン風
+
+【重要】語り手の現在の老年の姿は、この場面に必要でなければ描かない。子供・青年時代の場面なら子供・青年だけで構成する。
 
 【この場面のテキスト】
 「${text}」
@@ -1262,7 +1393,7 @@ async function generateImage(text, turnIdx) {
 
 【構図の指示】
 - 横長4:3、絵本の1ページ
-- テキストの内容に合った登場人物を選んで描く（全員出す必要はない）
+- テキストの内容に登場する人物・場面だけを描く
 - 温かく郷愁を感じる情景
 - 絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
 
@@ -1569,6 +1700,62 @@ function resetAll() {
   imageGenQueue.length = 0;
   imageGenRunning = false;
   showScreen('title');
+}
+
+// ============================================================
+//  FILTERING
+// ============================================================
+async function isMemoryNarrative(text) {
+  // 短すぎるテキストや明らかな非語りは即座に判定
+  const trimmed = text.trim();
+  const skipPatterns = [
+    /^(覚えていない|覚えてない|わからない|わかりません|ないです|ないかな|ないね|ないなあ|特にない|思い出せない|忘れた|忘れました)[\s。、！？]*$/,
+    /^(そうですね|そうかな|うーん|ええと|えーと|はい|いいえ|そう|なるほど|ああ|あー|うん|そっか)[\s。、！？]*$/,
+    /^.{1,8}$/, // 8文字以下は非語りの可能性が高い
+  ];
+  for (const pat of skipPatterns) {
+    if (pat.test(trimmed)) return false;
+  }
+
+  // AIで判定（短い問い合わせ）
+  try {
+    const prompt = `以下のテキストは「思い出・体験・エピソードの語り」ですか？それとも質問への返答・相槌・「覚えていない」などの非語りですか？
+
+テキスト：「${text}」
+
+判定基準：
+- 語り：具体的な出来事・場所・人物・感情・行動が含まれる（例：「小学校の運動会で転んだ」「母がよく作ってくれた煮物が好きだった」）
+- 非語り：「覚えていない」「わからない」「そうですね」「特にない」などの返答・相槌・否定
+
+「語り」なら yes、「非語り」なら no とだけ答えてください。`;
+    const result = await callAnthropic(prompt, 10);
+    return result.toLowerCase().includes('yes');
+  } catch(e) {
+    // API失敗時は語りとして扱う（スキップしない）
+    return true;
+  }
+}
+
+// フィルタリングポップアップのコールバック
+let _filterResolve = null;
+
+function filterProceed() {
+  hidePopup('popup-filter');
+  if (_filterResolve) { _filterResolve(true); _filterResolve = null; }
+}
+
+function filterSkip() {
+  hidePopup('popup-filter');
+  if (_filterResolve) { _filterResolve(false); _filterResolve = null; }
+}
+
+function showFilterPopup(text) {
+  const short = text.length > 40 ? text.slice(0, 40) + '…' : text;
+  document.getElementById('filter-text').textContent = `「${short}」
+
+この内容は絵本のページにしますか？`;
+  document.getElementById('popup-filter').classList.remove('hidden');
+  return new Promise(resolve => { _filterResolve = resolve; });
 }
 
 // ============================================================
