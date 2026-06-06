@@ -2588,6 +2588,7 @@ async function startYesAnd(mode) {
   ya.recognizedText = '';
   ya.generating = false;
   ya.skipNextTurnImage = false;
+  ya.usedTopics = []; // セッション中に出たお題の除外リスト
 
   const cfg = YA_MODE_CONFIG[mode];
   document.getElementById('yesand-mode-badge').textContent = cfg.badge;
@@ -2601,16 +2602,69 @@ async function startYesAnd(mode) {
   await generateTopic();
 }
 
-async function generateTopic(exclude) {
+// モードごとのカテゴリーリスト
+const YA_TOPIC_CATEGORIES = {
+  anokoro: [
+    '食べ物・料理・お菓子', '乗り物・交通（汽車・路面電車・オート三輪）',
+    '学校・勉強・給食・先生', '遊び・おもちゃ・外遊び',
+    'テレビ・ラジオ・映画・流行歌', '季節の行事・お祭り・縁日',
+    'スポーツ・運動会・プール', '家族の暮らし・台所・風呂',
+    '仕事・職場・初めての給料', '恋愛・青春・友情',
+    '自然・田舎・山や川', '買い物・商店街・市場',
+    '音楽・楽器・ダンス', '旅行・修学旅行・遠足',
+    '流行したもの・はやり言葉', '近所・隣人・地域の思い出',
+  ],
+  mirai: [
+    '孫・子供・若い世代との時間', '旅行・行ってみたい場所',
+    '趣味・やってみたいこと', '食べ物・料理・食卓',
+    '健康・長生き・体のこと', '住まい・暮らし方',
+    '仕事・社会への関わり', '友人・仲間との時間',
+    'テクノロジー・AI・便利な未来', '地球・自然・環境',
+  ],
+  moshimo: [
+    '仕事・職業の選択', '住む場所・引越し',
+    '学校・進学の選択', '恋愛・結婚のif',
+    '趣味・やり続けたこと', '旅行・行かなかった場所',
+    '友人・出会いのif', '家族との関係',
+    'お金・投資・節約', '健康・体のケア',
+  ],
+  kansha: [
+    '親・父母への感謝', '先生・恩師への感謝',
+    '友人・親友への感謝', '職場の上司・同僚への感謝',
+    '配偶者・パートナーへの感謝', '子供・孫への感謝',
+    '近所の人・地域の人への感謝', '見知らぬ人からもらった親切',
+    '言葉・一言で変わった出来事', '支えてくれた誰かへの感謝',
+  ],
+};
+
+async function generateTopic(excludeList) {
   const cfg = YA_MODE_CONFIG[ya.mode];
   const birthYear = 2026 - state.age;
+  const genderStr = state.gender === 'male' ? '男性' : '女性';
+
+  // カテゴリーをランダムに選ぶ（バリエーション確保）
+  const categories = YA_TOPIC_CATEGORIES[ya.mode] || [];
+  const cat = categories.length > 0
+    ? categories[Math.floor(Math.random() * categories.length)]
+    : '';
+
+  // 除外リスト（セッション中に出たお題を全て除外）
+  const excludes = excludeList || ya.usedTopics || [];
+  const excludeNote = excludes.length > 0
+    ? '\n\n以下のお題は絶対に使わないこと（既出）：\n' + excludes.map(t => '・' + t).join('\n')
+    : '';
+
   let prompt = cfg.topicPrompt(state.age, state.gender, birthYear);
-  if (exclude) prompt += '\n\n以下のお題は使わないこと：「' + exclude + '」';
+  if (cat) prompt += '\n\n今回は特に「' + cat + '」に関連したお題にしてください。';
+  prompt += excludeNote;
+
   document.getElementById('yesand-topic-text').textContent = '考えています…';
   try {
     const topic = await callAnthropic(prompt, 80);
-    ya.topic = topic.trim();
-    document.getElementById('yesand-topic-text').textContent = ya.topic;
+    const trimmed = topic.trim();
+    ya.topic = trimmed;
+    ya.usedTopics.push(trimmed); // 使ったお題を記録
+    document.getElementById('yesand-topic-text').textContent = trimmed;
   } catch(e) {
     document.getElementById('yesand-topic-text').textContent = 'お題の生成に失敗しました。自分で入力してください。';
   }
@@ -2618,7 +2672,7 @@ async function generateTopic(exclude) {
 
 async function refreshTopic() {
   if (ya.topicLocked) return;
-  await generateTopic(ya.topic);
+  await generateTopic(); // usedTopicsが自動で除外リストとして使われる
 }
 
 function toggleOwnTopic() {
