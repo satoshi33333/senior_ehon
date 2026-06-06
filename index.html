@@ -1067,6 +1067,7 @@ let state = {
     characters: '',     // 登場人物（例：「母・祖母」）
     checked: false,     // チェック済みフラグ
   },
+  skipNextImage: false, // 次のターンの絵生成をスキップするフラグ
 };
 
 // Yes AND専用ステート
@@ -1228,6 +1229,7 @@ function startStory() {
   state.currentQuestion = '';
   state.storyTitle = '';
   state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
   bgGenCompleted = 0;
   bgGenTotal = 0;
   imageGenQueue.length = 0;
@@ -1374,6 +1376,7 @@ ${context}
 - 「${hints}のお話でしたか？」という情報確認を、押しつけず自然な流れで問いに織り込む
 - 前回と同じ表現は使わない
 - 問いかけのみ出力（説明不要）`;
+        state.skipNextImage = true; // 情報収集ターンは絵不要
         return await callAnthropic(infoPrompt, 150);
       }
     } catch(e) {
@@ -1694,7 +1697,12 @@ async function submitTurn() {
   updateTurnDots();
 
   if (state.keys.openai) {
-    enqueueImage(confirmedText, state.turns.length - 1);
+    if (state.skipNextImage) {
+      // 情報収集ターンは絵を生成しない
+      state.skipNextImage = false;
+    } else {
+      enqueueImage(confirmedText, state.turns.length - 1);
+    }
   }
 
   // 次のプレイヤーへ
@@ -2403,6 +2411,7 @@ function resetAll() {
   state.currentQuestion = '';
   state.storyTitle = '';
   state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
   bgGenCompleted = 0;
   bgGenTotal = 0;
   imageGenQueue.length = 0;
@@ -2578,6 +2587,7 @@ async function startYesAnd(mode) {
   ya.topicLocked = false;
   ya.recognizedText = '';
   ya.generating = false;
+  ya.skipNextTurnImage = false;
 
   const cfg = YA_MODE_CONFIG[mode];
   document.getElementById('yesand-mode-badge').textContent = cfg.badge;
@@ -2735,7 +2745,9 @@ async function yaSubmitTurn() {
   yaClearInput();
   const p = ya.players[ya.currentPlayerIdx];
   yaAddBubble(p.avatar + ' ' + p.name, text, 'user');
-  ya.turns.push({ who: p.name, text, isAI: false });
+  const skipImg = ya.skipNextTurnImage || false;
+  ya.skipNextTurnImage = false;
+  ya.turns.push({ who: p.name, text, isAI: false, skipImage: skipImg });
   ya.currentPlayerIdx = (ya.currentPlayerIdx + 1) % ya.players.length;
   if (ya.players.length === 1) {
     await yaAITurn();
@@ -2751,9 +2763,33 @@ async function yaAITurn() {
   ra.style.opacity = '0.4'; ra.style.pointerEvents = 'none';
   document.getElementById('yesand-thinking').style.display = 'flex';
   const cfg = YA_MODE_CONFIG[ya.mode];
+  const userTurns = ya.turns.filter(t => !t.isAI);
   const log = ya.turns.map(t => t.who + '：「' + t.text + '」').join('\n');
   try {
-    const reply = await callAnthropic(cfg.aiPrompt(ya.topic, log), 120);
+    let reply;
+    // 3ターン目（ユーザー3回目）かつ1人モードかつ未チェックの場合、情報収集
+    if (userTurns.length === 3 && ya.players.length === 1 && !state.storyContext.checked && state.keys.anthropic) {
+      state.storyContext.checked = true;
+      try {
+        const checkPrompt = '以下の会話から情報を抽出してください。\n\n【会話】\n' + log + '\n\n以下をJSON形式で返してください（推定できない場合は空文字）：\n{\n  "era": "時代・年齢（例：昭和40年代・中学生の頃など）",\n  "place": "場所・地域（例：富山・東京の下町など）",\n  "characters": "登場人物（例：母の弟・みつるさんなど）",\n  "missing": ["不足している情報名（era/place/charactersのうち推定できないもの）"]\n}\nJSONのみ出力（説明不要）。';
+        const raw = await callAnthropic(checkPrompt, 200);
+        const cleaned = raw.replace(/[`][`][`]json|[`][`][`]/g, '').trim();
+        const info = JSON.parse(cleaned);
+        if (info.era) state.storyContext.era = info.era;
+        if (info.place) state.storyContext.place = info.place;
+        if (info.characters) state.storyContext.characters = info.characters;
+        if (info.missing && info.missing.length > 0) {
+          const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+          const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
+          const infoPrompt = cfg.aiPrompt(ya.topic, log) + '\n\nさらに返答の最後に「' + hints + 'のお話でしたか？」という確認を自然な流れで1文だけ付け加えてください。';
+          ya.skipNextTurnImage = true; // 情報収集ターンは絵不要
+          reply = await callAnthropic(infoPrompt, 150);
+        }
+      } catch(e) {
+        console.warn('yaStoryContext check failed:', e);
+      }
+    }
+    if (!reply) reply = await callAnthropic(cfg.aiPrompt(ya.topic, log), 120);
     yaAddBubble('✨ AI', reply, 'ai');
     ya.turns.push({ who: 'AI', text: reply, isAI: true });
     speakText(reply);
@@ -2792,14 +2828,16 @@ function yaFinish() {
 }
 
 function yaToEhon() {
+  // skipImageターン（情報収集への返答）は絵本から除外
   state.turns = ya.turns
-    .filter(t => !t.isAI)
+    .filter(t => !t.isAI && !t.skipImage)
     .map(t => ({ playerIdx: 0, text: t.text, imageUrl: null, audioBlob: null }));
   state.storyTitle = ya.topic;
   state.players = ya.players;
   state.totalTurns = state.turns.length;
   // BUG FIX: Yes ANDから絵本生成する際は前の背景情報をリセット
   state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
   bgGenCompleted = 0; bgGenTotal = 0;
   imageGenQueue.length = 0; imageGenRunning = false;
   if (state.keys.openai) {
