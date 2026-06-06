@@ -1060,7 +1060,13 @@ let state = {
   currentQuestion: '',
   storyTitle: '',
   pendingTurnText: '',   // フィルタリング判定中のテキスト一時保存
-  appMode: 'ehon',       // 'ehon' | 'anokoro' | 'mirai' | 'moshimo' | 'kansha'
+  appMode: 'ehon',
+  storyContext: {       // 3ターン目に収集した物語の背景情報
+    era: '',            // 時代（例：「昭和40年代・子供の頃」）
+    place: '',          // 場所（例：「九州の農村」）
+    characters: '',     // 登場人物（例：「母・祖母」）
+    checked: false,     // チェック済みフラグ
+  },
 };
 
 // Yes AND専用ステート
@@ -1221,6 +1227,7 @@ function startStory() {
   state.recognizedText = '';
   state.currentQuestion = '';
   state.storyTitle = '';
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
   bgGenCompleted = 0;
   bgGenTotal = 0;
   imageGenQueue.length = 0;
@@ -1324,6 +1331,58 @@ async function generateFirstQuestion() {
 
 async function generateNextQuestion(context) {
   const style = QUESTION_STYLES[Math.floor(Math.random() * QUESTION_STYLES.length)];
+
+  // 3ターン目かつ未チェックの場合、情報収集を問いに組み込む
+  if (state.totalTurns === 3 && !state.storyContext.checked && state.keys.anthropic) {
+    state.storyContext.checked = true; // 一度だけ実行
+    try {
+      const checkPrompt = `以下の語りから情報を抽出してください。
+
+【語り】
+${context}
+
+以下をJSON形式で返してください（推定できない場合は空文字）：
+{
+  "era": "時代・年齢（例：昭和40年代・子供の頃、中学生の頃など）",
+  "place": "場所・地域（例：九州の農村、東京の下町など）",
+  "characters": "登場人物（例：母・祖母・友人など）",
+  "missing": ["不足している情報名のリスト（era/place/charactersのうち空のもの）"]
+}
+JSONのみ出力（説明不要）。`;
+
+      const raw = await callAnthropic(checkPrompt, 200);
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const info = JSON.parse(cleaned);
+
+      // 取得できた情報を保存
+      if (info.era) state.storyContext.era = info.era;
+      if (info.place) state.storyContext.place = info.place;
+      if (info.characters) state.storyContext.characters = info.characters;
+
+      // 不足情報があれば問いに自然に組み込む
+      if (info.missing && info.missing.length > 0) {
+        const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+        const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
+        const infoPrompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context}
+
+次の問いかけを1〜2文で作ってください。
+条件：
+- 直前の語りを「そうですか」「それは〜ですね」などで温かく受け止めてから
+- 「${hints}のお話でしたか？」という情報確認を、押しつけず自然な流れで問いに織り込む
+- 前回と同じ表現は使わない
+- 問いかけのみ出力（説明不要）`;
+        return await callAnthropic(infoPrompt, 150);
+      }
+    } catch(e) {
+      console.warn('storyContext check failed:', e);
+      // 失敗しても通常の問いを続ける
+    }
+  }
+
+  // 通常の問いかけ
   const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
 
 【これまでの語り】
@@ -1880,11 +1939,23 @@ async function generateImage(text, turnIdx) {
     ? `語り手はこの場面では${ageHint}の${narratorGender}として描く`
     : `語り手はこの場面に応じた年齢の${narratorGender}または${narratorGenderTeen}として描く（現在の老年の姿は不要）`;
 
+  // storyContextから追加情報を組み立て
+  const ctxLines = [];
+  if (state.storyContext.era) ctxLines.push(`- 時代・背景：${state.storyContext.era}`);
+  if (state.storyContext.place) ctxLines.push(`- 場所・地域：${state.storyContext.place}`);
+  if (state.storyContext.characters) ctxLines.push(`- 主な登場人物：${state.storyContext.characters}`);
+  const ctxBlock = ctxLines.length > 0
+    ? `
+【収集済み背景情報（全ての絵に一貫して反映すること）】
+${ctxLines.join('\n')}
+`
+    : '';
+
   const prompt = `昭和時代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調。
 
 【時代設定】
 ${eraHint}の日本の風景・服装・生活用品を忠実に再現する
-
+${ctxBlock}
 【キャラクター設定（必ず一貫して守ること）】
 - 語り手: ${ageDesc}、黒髪
 - ${narratorAdult}
@@ -2329,7 +2400,9 @@ function resetAll() {
   state.maxTurns = 8;
   state.currentPlayerIdx = 0;
   state.recognizedText = '';
+  state.currentQuestion = '';
   state.storyTitle = '';
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
   bgGenCompleted = 0;
   bgGenTotal = 0;
   imageGenQueue.length = 0;
@@ -2616,12 +2689,15 @@ function yaStopRecord() {
   document.getElementById('yesand-record-btn').classList.remove('recording');
   document.getElementById('yesand-waveform').classList.remove('active');
   for (let i = 0; i < 5; i++) document.getElementById('yw' + i).style.height = '4px';
-  if (ya.recognizedText.trim()) {
-    document.getElementById('yesand-ta').placeholder = '';
-    document.getElementById('yesand-send-btn').disabled = false;
-  } else {
-    document.getElementById('yesand-ta').placeholder = 'もう一度お試しください';
-  }
+  // BUG FIX: mouseup と touchend の両方が発火する場合に備えて少し待つ
+  setTimeout(() => {
+    if (ya.recognizedText.trim()) {
+      document.getElementById('yesand-ta').placeholder = '';
+      document.getElementById('yesand-send-btn').disabled = false;
+    } else {
+      document.getElementById('yesand-ta').placeholder = 'もう一度お試しください';
+    }
+  }, 100);
 }
 
 function yaOnTextEdit(val) {
@@ -2722,6 +2798,8 @@ function yaToEhon() {
   state.storyTitle = ya.topic;
   state.players = ya.players;
   state.totalTurns = state.turns.length;
+  // BUG FIX: Yes ANDから絵本生成する際は前の背景情報をリセット
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
   bgGenCompleted = 0; bgGenTotal = 0;
   imageGenQueue.length = 0; imageGenRunning = false;
   if (state.keys.openai) {
