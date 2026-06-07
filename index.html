@@ -1556,7 +1556,7 @@ function startRecord() {
     _mediaRecorder.ondataavailable = e => {
       if (e.data && e.data.size > 0) _audioChunks.push(e.data);
     };
-    _mediaRecorder.onstop = async () => {
+    _mediaRecorder.onstop = () => {
       // streamを止める
       stream.getTracks().forEach(t => t.stop());
       _micStream = null;
@@ -1564,38 +1564,10 @@ function startRecord() {
       if (_audioChunks.length === 0) return;
       const mType = _mediaRecorder.mimeType || mimeType || 'audio/webm';
       const blob = new Blob(_audioChunks, { type: mType });
-      _pendingAudioBlob = blob; // 再生用に保存
+      _pendingAudioBlob = blob; // 再生用に保存（同期的に確実に保存）
 
-      // OpenAIキーがあればWhisperで文字起こし
-      if (state.keys.openai) {
-        _whisperTranscribing = true;
-        document.getElementById('recognized-ta').placeholder = '文字起こし中…';
-        try {
-          const ext = mType.includes('mp4') ? 'mp4' : 'webm';
-          const fd = new FormData();
-          fd.append('file', blob, 'audio.' + ext);
-          fd.append('model', 'whisper-1');
-          fd.append('language', 'ja');
-          const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + state.keys.openai },
-            body: fd,
-          });
-          const data = await res.json();
-          if (data.text) {
-            state.recognizedText = data.text;
-            document.getElementById('recognized-ta').value = data.text;
-            document.getElementById('recognized-ta').placeholder = '';
-            document.getElementById('btn-send').disabled = false;
-          } else {
-            document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。もう一度お試しください。';
-          }
-        } catch(e) {
-          console.warn('Whisper error:', e);
-          document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。文字入力をお使いください。';
-        }
-        _whisperTranscribing = false;
-      }
+      // Whisperで文字起こし（非同期、onstopと分離）
+      transcribeWithWhisper(blob, mType);
     };
     _mediaRecorder.start(100);
     animateWave();
@@ -1604,6 +1576,38 @@ function startRecord() {
     showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
     stopRecord();
   });
+}
+
+// Whisper文字起こし（onstopから分離・独立実行）
+async function transcribeWithWhisper(blob, mType) {
+  if (!state.keys.openai) return;
+  _whisperTranscribing = true;
+  document.getElementById('recognized-ta').placeholder = '文字起こし中…';
+  try {
+    const ext = mType.includes('mp4') ? 'mp4' : 'webm';
+    const fd = new FormData();
+    fd.append('file', blob, 'audio.' + ext);
+    fd.append('model', 'whisper-1');
+    fd.append('language', 'ja');
+    const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + state.keys.openai },
+      body: fd,
+    });
+    const data = await res.json();
+    if (data.text) {
+      state.recognizedText = data.text;
+      document.getElementById('recognized-ta').value = data.text;
+      document.getElementById('recognized-ta').placeholder = '';
+      document.getElementById('btn-send').disabled = false;
+    } else {
+      document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。もう一度お試しください。';
+    }
+  } catch(e) {
+    console.warn('Whisper error:', e);
+    document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。文字入力をお使いください。';
+  }
+  _whisperTranscribing = false;
 }
 
 function animateWave() {
@@ -1708,7 +1712,18 @@ async function submitTurn() {
   const player = state.players[state.currentPlayerIdx];
   addStoryBubble(player, confirmedText, false);
 
-  // _pendingAudioBlobはMediaRecorderのonstopで設定済み
+  // _pendingAudioBlobはonstopで同期的に設定済み
+  // Whisper文字起こし中の場合は完了を待つ（最大10秒）
+  if (_whisperTranscribing) {
+    await new Promise(resolve => {
+      const deadline = Date.now() + 10000;
+      const check = () => {
+        if (!_whisperTranscribing || Date.now() >= deadline) resolve();
+        else setTimeout(check, 100);
+      };
+      setTimeout(check, 100);
+    });
+  }
   const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null, audioBlob: _pendingAudioBlob || null };
   _pendingAudioBlob = null;
   state.turns.push(turnData);
