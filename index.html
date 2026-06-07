@@ -2270,7 +2270,14 @@ function playbackAll() {
 }
 
 let _userAudio = null;
+let _userAudioCtx = null;
+let _userAudioSrc = null;
+
 function stopUserAudio() {
+  // AudioContext方式の停止
+  if (_userAudioSrc) { try { _userAudioSrc.onended = null; _userAudioSrc.stop(); } catch(e) {} _userAudioSrc = null; }
+  if (_userAudioCtx) { try { _userAudioCtx.close(); } catch(e) {} _userAudioCtx = null; }
+  // BlobURL方式の停止（フォールバック用）
   if (_userAudio) { try { _userAudio.pause(); _userAudio.src = ''; } catch(e) {} _userAudio = null; }
 }
 
@@ -2305,13 +2312,42 @@ async function startPlaybackWithVoice(mode) {
 }
 
 async function playUserAudio(blob) {
-  return new Promise(resolve => {
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    _userAudio = audio;
-    audio.onended = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
-    audio.onerror = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
-    audio.play().catch(() => resolve());
+  return new Promise(async resolve => {
+    try {
+      // AudioContextでデコードして再生（自動再生ポリシー回避）
+      const arrayBuffer = await blob.arrayBuffer();
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      // サスペンド状態なら再開
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      const decoded = await audioCtx.decodeAudioData(arrayBuffer);
+      const src = audioCtx.createBufferSource();
+      src.buffer = decoded;
+      src.connect(audioCtx.destination);
+      // _userAudioの代わりにsrcを保持（stopUserAudioで止める）
+      _userAudioCtx = audioCtx;
+      _userAudioSrc = src;
+      src.onended = () => {
+        try { audioCtx.close(); } catch(e) {}
+        _userAudioCtx = null;
+        _userAudioSrc = null;
+        resolve();
+      };
+      src.start(0);
+    } catch(e) {
+      console.warn('playUserAudio error:', e);
+      // フォールバック：BlobURL方式
+      try {
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        _userAudio = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+        await audio.play();
+      } catch(e2) {
+        console.warn('playUserAudio fallback error:', e2);
+        resolve();
+      }
+    }
   });
 }
 
