@@ -1561,9 +1561,16 @@ function startRecord() {
       stream.getTracks().forEach(t => t.stop());
       _micStream = null;
 
-      if (_audioChunks.length === 0) return;
-      const mType = _mediaRecorder.mimeType || mimeType || 'audio/webm';
+      // BUG FIX: ここでmimeTypeを取得してからmediaRecorderをクリア
+      const mType = (_mediaRecorder && _mediaRecorder.mimeType) || mimeType || 'audio/webm';
+      _mediaRecorder = null; // onstop内でクリア
+
+      if (_audioChunks.length === 0) {
+        console.warn('audioChunks empty - no audio recorded');
+        return;
+      }
       const blob = new Blob(_audioChunks, { type: mType });
+      console.log('audioBlob created:', blob.size, 'bytes, type:', mType);
       _pendingAudioBlob = blob; // 再生用に保存（同期的に確実に保存）
 
       // Whisperで文字起こし（非同期、onstopと分離）
@@ -1624,9 +1631,10 @@ function stopRecord() {
   // recogRefは使わない（Whisper方式に変更）
   if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
   // MediaRecorderを停止 → onstopでWhisper文字起こしが走る
+  // BUG FIX: stop()直後にnullにするとonstop内でmimeTypeが参照できないので遅延させる
   if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
     try { _mediaRecorder.stop(); } catch(e) {}
-    _mediaRecorder = null;
+    // _mediaRecorder = null はonstop内で参照後にクリアする
   }
   if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
   document.getElementById('record-btn').classList.remove('recording');
@@ -2312,6 +2320,8 @@ async function startPlaybackWithVoice(mode) {
 }
 
 async function playUserAudio(blob) {
+  console.log('playUserAudio called, blob:', blob ? blob.size + ' bytes' : 'NULL');
+  if (!blob || blob.size === 0) { console.warn('blob is empty'); resolve && resolve(); return; }
   return new Promise(async resolve => {
     try {
       // AudioContextでデコードして再生（自動再生ポリシー回避）
