@@ -1686,8 +1686,15 @@ async function submitTurn() {
   const player = state.players[state.currentPlayerIdx];
   addStoryBubble(player, confirmedText, false);
 
-  // 音声BlobはMediaRecorderのonstopを少し待ってから取得
-  await sleep(200);
+  // 音声BlobはMediaRecorderのonstopを待ってから取得（最大1秒）
+  await new Promise(resolve => {
+    const deadline = Date.now() + 1000;
+    const check = () => {
+      if (_pendingAudioBlob || Date.now() >= deadline) resolve();
+      else setTimeout(check, 50);
+    };
+    setTimeout(check, 100); // 最低100ms待つ
+  });
   const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null, audioBlob: _pendingAudioBlob || null };
   _pendingAudioBlob = null;
   state.turns.push(turnData);
@@ -2159,9 +2166,14 @@ async function startPlaybackWithVoice(mode) {
     gotoSlide(i);
     const turn = state.turns[i];
 
-    if (mode === 'user' && turn.audioBlob) {
-      // じぶんの声：録音したBlobをそのまま再生
-      await playUserAudio(turn.audioBlob);
+    if (mode === 'user') {
+      if (turn.audioBlob) {
+        // じぶんの声：録音したBlobをそのまま再生
+        await playUserAudio(turn.audioBlob);
+      } else {
+        // 録音がない場合は無音でスライドだけ表示（AI音声にフォールバックしない）
+        await sleep(2000);
+      }
     } else {
       // AIの声：テキストをそのまま読み上げ（変換なし）
       await speakStoryText(turn.text);
