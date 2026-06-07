@@ -1,0 +1,3511 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>えほんのじかん 🌈 かみしばいゲーム</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+
+:root {
+  --pink:    #FF6B9D;
+  --yellow:  #FFD93D;
+  --mint:    #6BCB77;
+  --sky:     #4ECDC4;
+  --purple:  #A78BFA;
+  --orange:  #FF9F43;
+  --red:     #FF6B6B;
+  --white:   #FFFEF7;
+  --dark:    #2D2D2D;
+  --shadow:  rgba(0,0,0,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'M PLUS Rounded 1c', 'Kosugi Maru', sans-serif;
+  background: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== STARFIELD BG ===== */
+#bg-canvas {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  pointer-events: none; z-index: 0;
+}
+
+/* ===== SCREENS ===== */
+.screen {
+  position: relative; z-index: 1;
+  display: none; flex-direction: column; align-items: center;
+  min-height: 100vh; padding: 20px;
+  animation: fadeIn 0.5s ease;
+}
+.screen.active { display: flex; }
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes wiggle { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+@keyframes pop { 0%{transform:scale(0.8)} 70%{transform:scale(1.1)} 100%{transform:scale(1)} }
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+@keyframes float {0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes shine {0%{background-position:-200% center} 100%{background-position:200% center}}
+
+/* ===== TITLE SCREEN ===== */
+#screen-title {
+  background: linear-gradient(135deg, #FFE0F0 0%, #E0F4FF 50%, #E8FFE8 100%);
+  justify-content: center;
+}
+
+.title-cloud {
+  font-size: clamp(2.5rem, 8vw, 5rem);
+  font-weight: 800;
+  text-align: center;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, var(--pink), var(--purple), var(--sky));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(2px 2px 0 rgba(255,107,157,0.3));
+}
+
+.title-sub {
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  color: var(--purple);
+  text-align: center;
+  margin-bottom: 40px;
+  font-weight: 700;
+}
+
+.mascot {
+  font-size: 100px;
+  animation: bounce 2s ease-in-out infinite;
+  display: block;
+  text-align: center;
+  margin-bottom: 30px;
+  cursor: pointer;
+}
+
+.btn-start {
+  background: linear-gradient(135deg, var(--pink), var(--orange));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 20px 60px;
+  font-size: 1.8rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 0 #c04b7a, 0 10px 20px rgba(255,107,157,0.4);
+  transition: all 0.15s;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+  letter-spacing: 2px;
+}
+.btn-start:hover { transform: translateY(-3px); box-shadow: 0 11px 0 #c04b7a, 0 13px 25px rgba(255,107,157,0.5); }
+.btn-start:active { transform: translateY(5px); box-shadow: 0 3px 0 #c04b7a; }
+
+/* ===== SETUP SCREEN ===== */
+#screen-setup {
+  background: linear-gradient(160deg, #FFF3E0 0%, #FFF8E1 100%);
+}
+
+.setup-header {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--orange);
+  text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 2px 2px 0 rgba(255,159,67,0.3);
+}
+
+.setup-card {
+  background: white;
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.1), 0 10px 30px rgba(0,0,0,0.08);
+  border: 3px solid var(--yellow);
+}
+
+.setup-card h3 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mode-btn {
+  background: var(--white);
+  border: 3px solid #E0E0E0;
+  border-radius: 16px;
+  padding: 16px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: center;
+  transition: all 0.2s;
+  color: var(--dark);
+}
+.mode-btn .mode-icon { font-size: 2.2rem; display: block; margin-bottom: 6px; }
+.mode-btn:hover { transform: translateY(-3px); border-color: var(--pink); }
+.mode-btn.selected {
+  background: linear-gradient(135deg, #FFE0F0, #E8E0FF);
+  border-color: var(--pink);
+  box-shadow: 0 4px 0 rgba(255,107,157,0.3);
+  transform: translateY(-2px);
+}
+
+.player-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.player-row label { font-size: 1rem; font-weight: 700; min-width: 100px; }
+.counter-btn {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--sky);
+  background: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--sky);
+  transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+}
+.counter-btn:hover { background: var(--sky); color: white; }
+.counter-display {
+  width: 50px; height: 40px;
+  border: 3px solid var(--sky);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.3rem; font-weight: 800; color: var(--sky);
+  background: white;
+}
+
+/* Player name inputs */
+.player-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.player-name-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-name-input .avatar { font-size: 1.8rem; }
+.player-name-input input {
+  border: 3px solid #E0E0E0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 120px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.player-name-input input:focus { border-color: var(--pink); }
+
+.btn-go {
+  background: linear-gradient(135deg, var(--mint), var(--sky));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 18px 50px;
+  font-size: 1.5rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #3a8a55, 0 8px 20px rgba(107,203,119,0.4);
+  transition: all 0.15s;
+  margin-top: 10px;
+  letter-spacing: 1px;
+}
+.btn-go:hover { transform: translateY(-3px); }
+.btn-go:active { transform: translateY(4px); box-shadow: 0 2px 0 #3a8a55; }
+
+/* API KEY SECTION */
+.api-section {
+  background: white;
+  border-radius: 24px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 600px;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.08), 0 10px 30px rgba(0,0,0,0.06);
+  border: 3px solid var(--purple);
+}
+.api-section h3 { font-size: 1.1rem; font-weight: 800; color: var(--purple); margin-bottom: 12px; }
+.api-row { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.api-row label { font-size:0.85rem; font-weight:700; min-width:120px; color:#666; }
+.api-row input {
+  flex:1; border:2px solid #E0E0E0; border-radius:10px;
+  padding:8px 12px; font-family:inherit; font-size:0.85rem; outline:none;
+  transition:border-color 0.2s;
+}
+.api-row input:focus { border-color: var(--purple); }
+
+/* ===== GAME SCREEN ===== */
+#screen-game {
+  background: linear-gradient(160deg, #FFF8E8 0%, #F0F8FF 100%);
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.game-top {
+  width: 100%;
+  background: linear-gradient(135deg, var(--purple), var(--sky));
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+}
+
+.game-title-small {
+  color: white;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.turn-indicator {
+  display: flex;
+  gap: 5px;
+}
+.turn-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.4);
+  transition: all 0.3s;
+}
+.turn-dot.done { background: var(--yellow); }
+.turn-dot.current { background: white; animation: bounce 1s infinite; }
+
+.game-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px 16px;
+  flex: 1;
+  overflow-y: visible;
+}
+
+/* Kamishibai Frame */
+.kamishibai-frame {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4/3;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  background: #1a1a2e;
+  box-shadow: 0 10px 0 #8B4513, 0 15px 40px rgba(0,0,0,0.4);
+  border: 8px solid #C8860A;
+  margin-bottom: 16px;
+}
+.game-frame-hidden { display: none !important; }
+.bg-gen-progress {
+  width: 100%;
+  max-width: 640px;
+  background: rgba(255,255,255,0.85);
+  border-radius: 50px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--purple);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.bg-gen-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #E0E0E0;
+  border-radius: 50px;
+  overflow: hidden;
+}
+.bg-gen-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--sky));
+  border-radius: 50px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+.kamishibai-border {
+  position: absolute;
+  inset: 0;
+  border: 6px solid rgba(255,215,0,0.6);
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+#scene-image {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.5s;
+}
+
+.scene-placeholder {
+  width: 100%; height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e, #2d1b69);
+  color: white;
+}
+.scene-placeholder .ph-icon { font-size: 80px; margin-bottom: 10px; animation: float 3s ease-in-out infinite; }
+.scene-placeholder p { font-size: 1rem; opacity: 0.7; }
+
+.generating-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  color: white;
+  border-radius: 14px;
+}
+.gen-spinner {
+  width: 60px; height: 60px;
+  border: 6px solid rgba(255,255,255,0.2);
+  border-top-color: var(--yellow);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 12px;
+}
+.gen-text { font-size: 1rem; font-weight: 700; }
+
+/* Story text */
+.story-bubble {
+  width: 100%;
+  max-width: 640px;
+  background: white;
+  border-radius: 20px;
+  padding: 14px 18px 16px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  border-left: 6px solid var(--pink);
+  position: relative;
+  min-height: 60px;
+  box-sizing: border-box;
+  overflow: visible;         /* テキストが切れないよう */
+  flex-shrink: 0;            /* 高さが縮まないよう */
+}
+.story-bubble .speaker-tag {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--pink);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.story-bubble .story-text {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--dark);
+  word-break: break-word;    /* 単語単位で折り返し（より自然） */
+  overflow-wrap: break-word;
+  white-space: normal;
+  display: block;
+  width: 100%;
+}
+.story-bubble.ai-turn { border-left-color: var(--purple); }
+.story-bubble.ai-turn .speaker-tag { color: var(--purple); }
+
+/* Current turn indicator */
+.current-player-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  border-radius: 50px;
+  padding: 10px 20px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(255,159,67,0.4);
+  width: 100%;
+  max-width: 640px;
+}
+.current-player-badge .badge-avatar { font-size: 2rem; }
+.current-player-badge .badge-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.2);
+}
+.current-player-badge .badge-hint {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.9);
+}
+
+/* Voice input */
+.voice-controls {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.record-btn {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  border: 6px solid white;
+  background: linear-gradient(135deg, var(--red), var(--pink));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 6px 0 #c04040, 0 8px 25px rgba(255,107,107,0.5);
+  font-family: inherit;
+  color: white;
+  position: relative;
+}
+.record-btn .mic-icon { font-size: 2.5rem; line-height: 1; }
+.record-btn .btn-label { font-size: 0.65rem; font-weight: 800; margin-top: 2px; }
+.record-btn:hover { transform: scale(1.05); }
+.record-btn:active { transform: scale(0.95); }
+.record-btn.recording {
+  background: linear-gradient(135deg, #FF0000, #FF6B6B);
+  animation: pulse-record 1s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(255,0,0,0.4);
+}
+@keyframes pulse-record {
+  0% { box-shadow: 0 0 0 0 rgba(255,0,0,0.6), 0 6px 0 #900; }
+  70% { box-shadow: 0 0 0 20px rgba(255,0,0,0), 0 6px 0 #900; }
+  100% { box-shadow: 0 0 0 0 rgba(255,0,0,0), 0 6px 0 #900; }
+}
+
+.waveform {
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  align-items: center;
+  visibility: hidden;
+}
+.waveform.active { visibility: visible; }
+.wave-bar {
+  width: 5px;
+  background: var(--pink);
+  border-radius: 3px;
+  animation: wave 0.8s ease-in-out infinite;
+}
+.wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.wave-bar:nth-child(5) { animation-delay: 0.15s; }
+@keyframes wave {
+  0%,100% { height: 8px; }
+  50% { height: 35px; }
+}
+
+.recognized-text {
+  background: rgba(255,255,255,0.9);
+  border: 3px dashed var(--pink);
+  border-radius: 16px;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--dark);
+  min-height: 50px;
+  max-height: 120px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+.voice-action-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-send {
+  background: linear-gradient(135deg, var(--mint), var(--sky));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 35px;
+  font-size: 1.2rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #2a7a40;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-send:hover { transform: translateY(-2px); }
+.btn-send:active { transform: translateY(3px); box-shadow: 0 2px 0 #2a7a40; }
+.btn-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-clear {
+  background: white;
+  color: #999;
+  border: 3px solid #E0E0E0;
+  border-radius: 50px;
+  padding: 14px 25px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-clear:hover { border-color: var(--red); color: var(--red); }
+
+/* Text input fallback */
+.text-input-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.text-input {
+  flex: 1;
+  border: 3px solid var(--pink);
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  outline: none;
+  background: white;
+}
+
+/* Filter warning */
+.filter-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s;
+}
+.filter-card {
+  background: white;
+  border-radius: 28px;
+  padding: 32px;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 4px solid var(--yellow);
+  animation: pop 0.4s;
+}
+.filter-card .filter-mascot { font-size: 80px; margin-bottom: 10px; }
+.filter-card h3 { font-size: 1.4rem; font-weight: 800; color: var(--orange); margin-bottom: 8px; }
+.filter-card p { font-size: 1rem; line-height: 1.7; color: var(--dark); margin-bottom: 20px; }
+.filter-suggestion {
+  background: linear-gradient(135deg, #FFF0E0, #FFE8F0);
+  border: 3px solid var(--orange);
+  border-radius: 16px;
+  padding: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--orange);
+  margin-bottom: 20px;
+}
+
+.btn-use-suggestion {
+  background: linear-gradient(135deg, var(--orange), var(--yellow));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+.btn-retry-input {
+  background: white;
+  color: var(--dark);
+  border: 3px solid #E0E0E0;
+  border-radius: 50px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-retry-input:hover { border-color: var(--pink); color: var(--pink); }
+.filter-btns { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.btn-keep-original {
+  background: white;
+  color: #999;
+  border: 3px solid #E0E0E0;
+  border-radius: 50px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Continue popup */
+.continue-popup {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,107,157,0.9), rgba(167,139,250,0.9));
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.continue-card {
+  background: white;
+  border-radius: 32px;
+  padding: 40px 32px;
+  max-width: 440px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  animation: pop 0.5s;
+}
+.continue-card .cc-icon { font-size: 90px; margin-bottom: 10px; animation: bounce 1.5s infinite; }
+.continue-card h2 { font-size: 1.8rem; font-weight: 800; color: var(--pink); margin-bottom: 8px; }
+.continue-card p { font-size: 1rem; color: #666; line-height: 1.6; margin-bottom: 24px; }
+.continue-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-finish {
+  background: linear-gradient(135deg, var(--pink), var(--red));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 30px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #900;
+}
+.btn-continue-more {
+  background: linear-gradient(135deg, var(--mint), var(--sky));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 30px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #2a7a40;
+}
+
+/* ===== FINALE SCREEN ===== */
+#screen-finale {
+  background: linear-gradient(160deg, #1a1a2e 0%, #2d1b69 100%);
+  color: white;
+}
+
+.finale-header {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  margin: 20px 0 10px;
+  background: linear-gradient(135deg, var(--yellow), var(--orange), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.finale-frame {
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 4/3;
+  border-radius: 20px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 10px 0 rgba(200,134,10,0.6), 0 15px 40px rgba(0,0,0,0.6);
+  border: 8px solid #C8860A;
+  margin-bottom: 16px;
+}
+
+#finale-image {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: opacity 0.7s;
+}
+
+.finale-story-text {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.88));
+  color: white;
+  padding: 30px 16px 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.6;
+  text-shadow: 1px 1px 3px black;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  max-height: 45%;           /* 画像の45%以上は占めない */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;     /* 最大4行 */
+  -webkit-box-orient: vertical;
+}
+
+.finale-controls {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.btn-playback {
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 35px;
+  font-size: 1.2rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #8B5E00;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: float 3s ease-in-out infinite;
+}
+.btn-playback:hover { transform: translateY(-3px) scale(1.02); }
+
+.slide-nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.slide-nav-btn {
+  width: 50px; height: 50px;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px);
+}
+.slide-nav-btn:hover { background: rgba(255,255,255,0.3); }
+.slide-counter {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--yellow);
+  min-width: 60px;
+  text-align: center;
+}
+
+.finale-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.finale-dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.finale-dot.active {
+  background: var(--yellow);
+  transform: scale(1.3);
+}
+
+.bgm-selector {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.bgm-btn {
+  background: rgba(255,255,255,0.12);
+  border: 2px solid rgba(255,255,255,0.25);
+  border-radius: 50px;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bgm-btn:hover { background: rgba(255,255,255,0.2); }
+.bgm-btn.selected {
+  background: linear-gradient(135deg, var(--purple), var(--sky));
+  border-color: transparent;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+.bgm-label {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.btn-again {
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 16px 35px;
+  font-size: 1.2rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #6b0077;
+  transition: all 0.15s;
+  margin-bottom: 30px;
+}
+.btn-again:hover { transform: translateY(-3px); }
+
+/* Audio player indicator */
+.audio-playing-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: rgba(255,215,0,0.95);
+  border-radius: 50px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: fadeIn 0.3s;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+}
+.audio-wave { display:flex; gap:2px; align-items:center; }
+.aw { width:3px; background:#333; border-radius:2px; animation: wave 0.6s ease-in-out infinite; }
+.aw:nth-child(2){animation-delay:0.1s;} .aw:nth-child(3){animation-delay:0.2s;}
+
+/* Age mode selector - 3層モデル */
+.age-mode-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.age-mode-btn {
+  background: var(--white);
+  border: 3px solid #E0E0E0;
+  border-radius: 20px;
+  padding: 16px 20px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: all 0.2s;
+  color: var(--dark);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.age-mode-btn .am-icon { font-size: 2.5rem; flex-shrink: 0; }
+.age-mode-btn .am-info { flex: 1; }
+.age-mode-btn .am-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 2px; }
+.age-mode-btn .am-age   { font-size: 0.8rem; font-weight: 700; opacity: 0.7; margin-bottom: 2px; }
+.age-mode-btn .am-desc  { font-size: 0.75rem; color: #888; font-weight: 400; line-height: 1.4; }
+.age-mode-btn:hover { transform: translateY(-2px); }
+.age-mode-btn.selected { box-shadow: 0 4px 0 rgba(0,0,0,0.15); transform: translateY(-2px); }
+#agemode-issho.selected   { background: linear-gradient(135deg, #FFF0F8, #FFE8F0); border-color: var(--pink); }
+#agemode-bouken.selected  { background: linear-gradient(135deg, #F0FFF4, #E0F8FF); border-color: var(--mint); }
+#agemode-creator.selected { background: linear-gradient(135deg, #F5F0FF, #EBF0FF); border-color: var(--purple); }
+
+/* ゲーム画面上部のモードバッジ */
+.mode-badge {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: white;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* Art style selector */
+.style-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+.style-btn {
+  background: var(--white);
+  border: 3px solid #E0E0E0;
+  border-radius: 16px;
+  padding: 12px 8px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: all 0.2s;
+  color: var(--dark);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.style-btn .style-icon { font-size: 2rem; }
+.style-btn .style-name { font-size: 0.85rem; font-weight: 800; }
+.style-btn .style-desc { font-size: 0.7rem; color: #888; font-weight: 400; }
+.style-btn:hover { transform: translateY(-2px); border-color: var(--sky); }
+.style-btn.selected {
+  background: linear-gradient(135deg, #E0F8FF, #E8E0FF);
+  border-color: var(--sky);
+  box-shadow: 0 4px 0 rgba(78,205,196,0.3);
+  transform: translateY(-2px);
+}
+
+/* Game screen art style switcher */
+.art-style-bar {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.art-style-bar .bar-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #888;
+  white-space: nowrap;
+}
+.style-chip {
+  background: white;
+  border: 2px solid #E0E0E0;
+  border-radius: 50px;
+  padding: 5px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dark);
+}
+.style-chip:hover { border-color: var(--sky); }
+.style-chip.active {
+  background: linear-gradient(135deg, var(--sky), var(--purple));
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 3px 8px rgba(78,205,196,0.4);
+}
+
+/* Ruby / furigana */
+
+
+/* ===== 年齢スライダー ===== */
+.age-slider-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0 8px;
+}
+.age-display {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.age-num {
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+  background: linear-gradient(135deg, var(--pink), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.age-unit {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--purple);
+}
+.age-desc-badge {
+  background: linear-gradient(135deg, #FFF0F8, #F0F0FF);
+  border: 2px solid var(--pink);
+  border-radius: 50px;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--purple);
+  text-align: center;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+}
+.age-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 50px;
+  background: linear-gradient(90deg, var(--pink) var(--pct, 0%), #E0E0E0 var(--pct, 0%));
+  outline: none;
+  cursor: pointer;
+}
+.age-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--pink);
+  box-shadow: 0 2px 8px rgba(255,107,157,0.4);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.age-slider::-webkit-slider-thumb:active { transform: scale(1.2); }
+.age-labels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.75rem;
+  color: #aaa;
+  font-weight: 700;
+  padding: 0 2px;
+}
+
+/* ===== 画像生成待ち画面 ===== */
+#screen-waiting {
+  background: linear-gradient(160deg, #1a1a2e 0%, #2d1b69 100%);
+  color: white;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+.waiting-title {
+  font-size: 2rem;
+  font-weight: 800;
+  text-align: center;
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.waiting-spinner {
+  width: 100px; height: 100px;
+  border: 8px solid rgba(255,255,255,0.15);
+  border-top-color: var(--yellow);
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+.waiting-progress-wrap {
+  width: 280px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50px;
+  height: 14px;
+  overflow: hidden;
+}
+.waiting-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--purple), var(--sky));
+  border-radius: 50px;
+  transition: width 0.4s ease;
+}
+.waiting-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+}
+.waiting-scene-icons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 320px;
+}
+.waiting-icon {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  transition: background 0.3s;
+}
+.waiting-icon.done { background: rgba(107,203,119,0.4); }
+
+/* ===== 全シーングリッド ===== */
+.grid-view {
+  display: none;
+  width: 100%;
+  max-width: 640px;
+  flex-direction: column;
+  gap: 16px;
+}
+.grid-view.visible { display: flex; }
+.scene-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.scene-grid-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 4/3;
+  background: #1a1a2e;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+}
+.scene-grid-item:hover { border-color: var(--yellow); transform: scale(1.03); }
+.scene-grid-item img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.scene-grid-item .grid-num {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 1px 3px black;
+}
+.scene-grid-item .grid-text {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 14px 5px 4px;
+  text-shadow: 0 1px 2px black;
+  word-break: break-all;
+}
+.scene-grid-item .grid-no-img {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.3);
+  font-size: 1.5rem;
+}
+.btn-back-slideshow {
+  background: linear-gradient(135deg, var(--purple), var(--sky));
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 30px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #3a1a8a;
+  transition: all 0.15s;
+  align-self: center;
+}
+.btn-back-slideshow:hover { transform: translateY(-2px); }
+.btn-show-grid {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  backdrop-filter: blur(10px);
+}
+.btn-show-grid:hover { background: rgba(255,255,255,0.25); }
+
+/* UTILS */
+.hidden { display: none !important; }
+.mt-auto { margin-top: auto; }
+
+.toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--dark);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  z-index: 200;
+  animation: fadeIn 0.3s;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+/* Confetti wrapper */
+#confetti-wrapper {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 999;
+  overflow: hidden;
+}
+.confetti-piece {
+  position: absolute;
+  width: 12px; height: 12px;
+  top: -20px;
+  border-radius: 3px;
+  animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+  to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* Scrollable story log */
+.story-log {
+  width: 100%;
+  max-width: 640px;
+  max-height: 28vh;          /* 画面高さの28%・画面に合わせてスケール */
+  min-height: 120px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 4px 4px 2px;
+  margin-bottom: 12px;
+  scroll-behavior: smooth;
+}
+.story-log::-webkit-scrollbar { width: 6px; }
+.story-log::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); border-radius: 3px; }
+.story-log::-webkit-scrollbar-thumb { background: var(--pink); border-radius: 3px; }
+
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div id="confetti-wrapper"></div>
+
+<!-- ========== SCREEN 1: TITLE ========== -->
+<div id="screen-title" class="screen active">
+  <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+    <div class="mascot" id="mascot-emoji" onclick="animateMascot(this)">🦊</div>
+    <div class="title-cloud">えほんのじかん</div>
+    <div class="title-sub">✨ おやこで つくる かみしばい ✨</div>
+    <button class="btn-start" onclick="showScreen('setup')">
+      はじめる！ 🎉
+    </button>
+    <div style="margin-top:20px; font-size:0.85rem; color:#999; text-align:center;">
+      4さい〜13さい・おやこで いっしょに
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 2: SETUP ========== -->
+<div id="screen-setup" class="screen">
+  <div class="setup-header">⚙️ ゲームのせってい</div>
+
+  <!-- Age Mode Select - 3層モデル -->
+  <div class="setup-card" style="border-color:var(--pink);max-width:600px;width:100%;">
+    <h3>🌟 どのモードで あそぶ？</h3>
+    <div class="age-mode-grid">
+      <button class="age-mode-btn" onclick="selectAgeMode('issho')" id="agemode-issho">
+        <span class="am-icon">🌱</span>
+        <div class="am-info">
+          <div class="am-title" style="color:var(--pink);">いっしょモード</div>
+          <div class="am-age">4〜6さい ／ おとなと いっしょに</div>
+          <div class="am-desc">みじかく かんたん。おとなが よんであげながら こどもと いっしょに つくる。</div>
+        </div>
+      </button>
+      <button class="age-mode-btn selected" onclick="selectAgeMode('bouken')" id="agemode-bouken">
+        <span class="am-icon">🌟</span>
+        <div class="am-info">
+          <div class="am-title" style="color:var(--mint);">ぼうけんモード</div>
+          <div class="am-age">7〜10さい ／ ひとりでも できる</div>
+          <div class="am-desc">ふつうの ながさ。ひとりでも みんなでも じゆうに ぼうけん！</div>
+        </div>
+      </button>
+      <button class="age-mode-btn" onclick="selectAgeMode('creator')" id="agemode-creator">
+        <span class="am-icon">🔥</span>
+        <div class="am-info">
+          <div class="am-title" style="color:var(--purple);">クリエイターモード</div>
+          <div class="am-age">11〜13さい ／ ほんかく そっきょう</div>
+          <div class="am-desc">ながくて ふかい ものがたり。かんじも つかって ほんかくてきに そうさく。</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- 年齢スライダー -->
+  <div class="setup-card" id="age-slider-card" style="border-color:var(--purple);max-width:600px;width:100%;">
+    <h3>🎂 こどもは なんさい？</h3>
+    <div class="age-slider-wrap">
+      <div class="age-display">
+        <span class="age-num" id="age-num">7</span>
+        <span class="age-unit">さい</span>
+      </div>
+      <div class="age-desc-badge" id="age-desc-badge">ぼうけんモードが おすすめ！</div>
+      <input
+        type="range" min="4" max="13" value="7" step="1"
+        class="age-slider" id="age-slider"
+        oninput="onAgeSlider(this.value)"
+        style="--pct: 33%;"
+      />
+      <div class="age-labels">
+        <span>4さい</span><span>6さい</span><span>8さい</span><span>10さい</span><span>13さい</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode Select -->
+  <div class="setup-card" style="border-color:var(--pink);">
+    <h3>🎮 だれとあそぶ？</h3>
+    <div class="mode-grid">
+      <button class="mode-btn selected" onclick="selectMode('ai-solo')" id="mode-ai-solo">
+        <span class="mode-icon">🤖</span>
+        AIとひとりで
+      </button>
+      <button class="mode-btn" onclick="selectMode('ai-group')" id="mode-ai-group">
+        <span class="mode-icon">🤖👨‍👧</span>
+        AIとみんなで
+      </button>
+      <button class="mode-btn" onclick="selectMode('human-only')" id="mode-human-only">
+        <span class="mode-icon">👨‍👧‍👦</span>
+        AIなしでみんなで
+      </button>
+      <button class="mode-btn" onclick="selectMode('ai-child-adult')" id="mode-ai-child-adult">
+        <span class="mode-icon">🤖🌸👶</span>
+        AI＋おとな＋こども
+      </button>
+    </div>
+  </div>
+
+  <!-- First Turn Select -->
+  <div class="setup-card" id="first-turn-card" style="border-color:var(--mint);max-width:600px;width:100%;">
+    <h3>🎬 だれからはじめる？</h3>
+    <div class="mode-grid">
+      <button class="mode-btn" onclick="selectFirstTurn('ai')" id="first-ai">
+        <span class="mode-icon">✨</span>
+        AIからはじめる
+      </button>
+      <button class="mode-btn selected" onclick="selectFirstTurn('human')" id="first-human">
+        <span class="mode-icon">🙋</span>
+        じぶんからはじめる
+      </button>
+    </div>
+  </div>
+
+  <!-- Player Count -->
+  <div class="setup-card" id="player-count-card">
+    <h3>👶 こどものかず</h3>
+    <div class="player-row">
+      <label>こども</label>
+      <button class="counter-btn" onclick="changeCount('child', -1)">－</button>
+      <div class="counter-display" id="child-count">1</div>
+      <button class="counter-btn" onclick="changeCount('child', 1)">＋</button>
+    </div>
+    <div class="player-row" id="adult-row">
+      <label>おとな</label>
+      <button class="counter-btn" onclick="changeCount('adult', -1)">－</button>
+      <div class="counter-display" id="adult-count">0</div>
+      <button class="counter-btn" onclick="changeCount('adult', 1)">＋</button>
+    </div>
+    <!-- Names -->
+    <div class="player-names" id="player-names-container"></div>
+  </div>
+
+  <!-- API Keys (collapsible) -->
+  <!-- Art Style Select -->
+  <div class="setup-card" style="border-color:var(--sky);">
+    <h3>🎨 えのスタイルをえらぼう！</h3>
+    <div class="style-grid">
+      <button class="style-btn selected" onclick="selectArtStyle('mukashi')" id="artstyle-mukashi">
+        <span class="style-icon">🏮</span>
+        <span class="style-name">むかしばなし</span>
+        <span class="style-desc">まんが日本昔ばなし風</span>
+      </button>
+      <button class="style-btn" onclick="selectArtStyle('anime')" id="artstyle-anime">
+        <span class="style-icon">✨</span>
+        <span class="style-name">アニメ風</span>
+        <span class="style-desc">現代日本アニメ風</span>
+      </button>
+
+      <button class="style-btn" onclick="selectArtStyle('western')" id="artstyle-western">
+        <span class="style-icon">🌟</span>
+        <span class="style-name">アメコミ風</span>
+        <span class="style-desc">ポップ・カラフル</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="api-section">
+    <h3>🔑 APIキー（おとなのひと用）</h3>
+    <div class="api-row">
+      <label>Anthropic API</label>
+      <input type="password" id="api-anthropic" placeholder="sk-ant-..." />
+    </div>
+    <div class="api-row">
+      <label>OpenAI API</label>
+      <input type="password" id="api-openai" placeholder="sk-..." />
+    </div>
+    <div class="api-row">
+      <label>Google TTS API</label>
+      <input type="password" id="api-google" placeholder="AIza..." />
+    </div>
+    <!-- 保存オプション -->
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;background:rgba(255,255,255,0.55);border-radius:14px;border:1px solid rgba(0,0,0,0.08);">
+      <input type="checkbox" id="save-keys-check" style="width:18px;height:18px;cursor:pointer;flex-shrink:0;" />
+      <div style="flex:1;">
+        <div style="font-size:0.88rem;font-weight:700;color:#444;">このブラウザに保存する</div>
+        <div style="font-size:0.75rem;color:#888;margin-top:2px;">次回から入力不要。このデバイス内にのみ保存されます。</div>
+      </div>
+      <button onclick="clearSavedKeys()" id="btn-clear-keys" style="display:none;background:transparent;border:1px solid #ffaaaa;color:#cc4444;border-radius:8px;padding:5px 10px;font-size:0.75rem;font-family:inherit;cursor:pointer;white-space:nowrap;">🗑 削除</button>
+    </div>
+  </div>
+
+  <button class="btn-go" onclick="startGame()">
+    ゲームスタート！ 🚀
+  </button>
+  <div style="height:30px;"></div>
+</div>
+
+<!-- ========== SCREEN 3: GAME ========== -->
+<div id="screen-game" class="screen">
+  <!-- Top bar -->
+  <div class="game-top">
+    <div class="game-title-small">🎭 えほんのじかん</div>
+    <div class="mode-badge" id="mode-badge">🌟 ぼうけん</div>
+    <div class="turn-indicator" id="turn-dots"></div>
+    <div style="font-size:0.85rem;color:white;font-weight:700;" id="turn-label">1 / 10</div>
+  </div>
+
+  <div class="game-main">
+    <!-- gen-overlay・scene-image（非表示・JSが参照） -->
+    <div id="gen-overlay" style="display:none!important;"></div>
+    <div id="gen-text" style="display:none!important;"></div>
+    <img id="scene-image" src="" alt="" style="display:none!important;"/>
+    <div id="scene-placeholder" style="display:none!important;"></div>
+
+    <!-- art-style-bar removed -->
+
+    <!-- バックグラウンド生成プログレスバー -->
+    <div class="bg-gen-progress" id="bg-gen-progress" style="display:none;">
+      <span>🎨</span>
+      <div class="bg-gen-bar-track">
+        <div class="bg-gen-bar-fill" id="bg-gen-bar"></div>
+      </div>
+      <span id="bg-gen-label">えをかいているよ…</span>
+    </div>
+
+    <!-- Story log -->
+    <div class="story-log" id="story-log"></div>
+
+    <!-- Current player -->
+    <div class="current-player-badge" id="current-player-badge">
+      <span class="badge-avatar" id="badge-avatar">🦊</span>
+      <div>
+        <div class="badge-name" id="badge-name">じゅんばんだよ！</div>
+        <div class="badge-hint" id="badge-hint">「はい、すると…」のつづきを おはなしして♪</div>
+      </div>
+    </div>
+
+    <!-- Voice controls -->
+    <div class="voice-controls" id="voice-controls">
+      <div class="waveform" id="waveform">
+        <div class="wave-bar" style="height:8px;"></div>
+        <div class="wave-bar" style="height:8px;"></div>
+        <div class="wave-bar" style="height:8px;"></div>
+        <div class="wave-bar" style="height:8px;"></div>
+        <div class="wave-bar" style="height:8px;"></div>
+      </div>
+
+      <button class="record-btn" id="record-btn" onmousedown="startRecording()" onmouseup="stopRecording()" ontouchstart="startRecording()" ontouchend="stopRecording()">
+        <span class="mic-icon">🎙️</span>
+        <span class="btn-label">おしながら はなす</span>
+      </button>
+
+      <!-- 音声認識テキスト + 編集エリア -->
+      <div style="width:100%;display:flex;flex-direction:column;gap:6px;">
+        <!-- テキスト表示（タップで編集） -->
+        <textarea
+          id="recognized-text"
+          rows="2"
+          placeholder="ここにことばがでるよ 👆"
+          oninput="onRecognizedEdit(this.value)"
+          onfocus="onRecognizedFocus()"
+          onblur="onRecognizedBlur()"
+          style="width:100%;background:rgba(255,255,255,0.9);border:3px dashed var(--pink);border-radius:16px;padding:12px 16px;font-size:1.1rem;font-family:inherit;font-weight:700;color:#2D2D2D;min-height:60px;resize:none;outline:none;box-sizing:border-box;word-break:break-all;line-height:1.5;text-align:center;cursor:text;"
+        ></textarea>
+        <!-- 編集中のみ表示される確定バナー -->
+        <div id="edit-confirm-bar" style="display:none;background:linear-gradient(135deg,#A78BFA,#4ECDC4);border-radius:50px;padding:8px 16px;display:none;align-items:center;justify-content:space-between;">
+          <span style="color:white;font-size:0.85rem;font-weight:700;">✏️ なおしたら → をおしてね</span>
+          <button onclick="confirmEdit()" style="background:white;border:none;border-radius:50px;padding:6px 16px;font-family:inherit;font-size:0.85rem;font-weight:800;color:#A78BFA;cursor:pointer;">✓ かくてい</button>
+        </div>
+        <!-- 録音後のヒント（編集中は非表示） -->
+        <div id="edit-hint" style="display:none;font-size:0.75rem;color:var(--purple);font-weight:700;text-align:center;">
+          👆 ここをタップするとことばをなおせます（おとなのかた）
+        </div>
+      </div>
+
+      <div class="voice-action-row">
+        <button class="btn-clear" onclick="clearInput()">やりなおす</button>
+        <button class="btn-send" id="btn-send" onclick="submitTurn()" disabled>
+          つぎへ！ ➡️
+        </button>
+      </div>
+
+      <!-- Text fallback -->
+      <div class="text-input-row" id="text-input-row" style="display:none;">
+        <input type="text" class="text-input" id="text-input" placeholder="ここにおはなしをかいてね…" />
+        <button class="btn-send" onclick="submitFromText()">➡️</button>
+      </div>
+      <button onclick="toggleTextInput()" style="font-size:0.8rem;color:#999;background:none;border:none;cursor:pointer;font-family:inherit;">
+        📝 もじでいれる
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SCREEN 4: FINALE ========== -->
+<!-- ========== SCREEN: 画像生成待ち ========== -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-title">🎨 えをかいているよ…</div>
+  <div class="waiting-spinner"></div>
+  <div class="waiting-scene-icons" id="waiting-icons"></div>
+  <div class="waiting-progress-wrap">
+    <div class="waiting-progress-fill" id="waiting-progress-fill" style="width:0%"></div>
+  </div>
+  <div class="waiting-label" id="waiting-label">0 / 0 まいできた！</div>
+
+  <!-- 保護者向けリアルタイム状況説明 -->
+  <div id="waiting-status-box" style="margin-top:20px;background:rgba(255,255,255,0.1);border-radius:16px;padding:16px 20px;max-width:320px;text-align:left;line-height:1.7;min-height:80px;">
+    <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);font-weight:700;margin-bottom:6px;">👨‍👩‍👧 おとなのかたへ</div>
+    <div id="waiting-status-text" style="font-size:0.85rem;color:white;font-weight:700;line-height:1.6;">
+      準備中…
+    </div>
+  </div>
+
+  <button onclick="skipWaiting()" style="margin-top:16px;background:rgba(255,255,255,0.15);color:white;border:2px solid rgba(255,255,255,0.4);border-radius:50px;padding:10px 24px;font-family:inherit;font-size:0.9rem;font-weight:700;cursor:pointer;">
+    このまま すすむ →
+  </button>
+</div>
+
+<div id="screen-finale" class="screen">
+  <div class="finale-header">🌟 できあがり！ 🌟</div>
+  <div style="font-size:0.9rem;color:rgba(255,255,255,0.7);text-align:center;margin-bottom:12px;">
+    みんなでつくったかみしばいだよ！
+  </div>
+
+  <!-- Slideshow frame -->
+  <div class="finale-frame" style="width:100%;max-width:640px;">
+    <img id="finale-image" src="" alt="" />
+    <div class="finale-story-text" id="finale-story-text"></div>
+    <div id="audio-playing-badge" class="audio-playing-badge hidden">
+      🎵 さいせいちゅう
+      <div class="audio-wave">
+        <div class="aw" style="height:8px;"></div>
+        <div class="aw" style="height:12px;"></div>
+        <div class="aw" style="height:8px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slide navigation -->
+  <div class="slide-nav">
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide - 1)">◀</button>
+    <div class="slide-counter" id="slide-counter">1 / 10</div>
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide + 1)">▶</button>
+  </div>
+
+  <div class="finale-dots" id="finale-dots"></div>
+
+  <!-- BGM選択 + 再生コントロール -->
+  <div class="finale-controls">
+    <div class="bgm-label">🎵 BGMをえらぼう</div>
+    <div class="bgm-selector">
+      <button class="bgm-btn" onclick="selectBgm('none')" id="bgm-none">🔇 なし</button>
+      <button class="bgm-btn selected" onclick="selectBgm('wagakki')" id="bgm-wagakki">🏮 むかし</button>
+      <button class="bgm-btn" onclick="selectBgm('yururi')" id="bgm-yururi">🌸 ほのぼの</button>
+      <button class="bgm-btn" onclick="selectBgm('boken')" id="bgm-boken">⚡ ぼうけん</button>
+      <button class="bgm-btn" onclick="selectBgm('hoshi')" id="bgm-hoshi">✨ ふしぎ</button>
+    </div>
+    <button class="btn-playback" id="btn-playback" onclick="playbackAll()">
+      ▶️ さいせいする！
+    </button>
+  </div>
+
+  <!-- 全シーングリッドビュー -->
+  <div class="grid-view" id="grid-view">
+    <div class="scene-grid" id="scene-grid"></div>
+    <button class="btn-back-slideshow" onclick="showSlideshow()">
+      ◀ スライドショーにもどる
+    </button>
+  </div>
+
+  <!-- 通常ボタン -->
+  <div id="finale-normal-btns">
+    <div class="finale-controls" style="margin-bottom:10px;">
+      <button class="btn-show-grid" id="btn-show-grid" onclick="showGridView()" style="display:none;">
+        🖼 ぜんぶのえをみる
+      </button>
+    </div>
+    <button class="btn-again" onclick="resetGame()">
+      🔄 もういちど あそぶ！
+    </button>
+  </div>
+</div>
+
+<!-- ========== POPUPS ========== -->
+<!-- Filter popup -->
+<div id="filter-popup" class="filter-popup hidden">
+  <div class="filter-card">
+    <div class="filter-mascot" id="filter-mascot">🦊</div>
+    <h3 id="filter-title">ちょっと まってね！</h3>
+    <p id="filter-message">そのことばは、おともだちが かなしくなるかも しれないよ。<br>こんなことばに してみよう！</p>
+    <div class="filter-suggestion" id="filter-suggestion">ことばをかんがえているよ…</div>
+    <div class="filter-btns">
+      <button class="btn-use-suggestion" onclick="hideFilterPopup(true)">このことばで つづける！ ✨</button>
+      <button class="btn-retry-input" onclick="hideFilterPopup(false)">もういちど やりなおす 🎙️</button>
+    </div>
+  </div>
+</div>
+
+<!-- Continue popup -->
+<div id="continue-popup" class="continue-popup hidden">
+  <div class="continue-card">
+    <div class="cc-icon">🎉</div>
+    <h2>10かい おはなしした！</h2>
+    <p>ここでおしまいにする？<br>それとも もうすこし つづける？</p>
+    <div class="continue-btns">
+      <button class="btn-finish" onclick="finishStory()">
+        🎊 ここでおわる！
+      </button>
+      <button class="btn-continue-more" onclick="continueStory()">
+        ▶️ もっとつづける！
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  BACKGROUND IMAGE GENERATION COUNTERS
+// ============================================================
+let bgGenCompleted = 0;
+let bgGenTotal = 0;
+
+// ============================================================
+//  STATE
+// ============================================================
+const AVATARS_CHILD = ['🐰','🐻','🐼','🐯','🦁','🐸','🐧','🦊','🐨','🦄'];
+const AVATARS_ADULT = ['🌸','🌟','🌈','🦋','🍀','🌺','🎵','🍁','🌙','☀️'];
+
+let state = {
+  mode: 'ai-solo',       // ai-solo | ai-group | human-only | ai-child-adult
+  players: [],           // [{id, name, role, avatar}]
+  currentPlayerIdx: 0,
+  turns: [],             // [{playerIdx, text, imageUrl, audioBlob, audioUrl}]
+  maxTurns: 10,
+  totalTurns: 0,
+  isRecording: false,
+  mediaRecorder: null,
+  audioChunks: [],
+  recognizedText: '',
+  pendingAudioBlob: null,
+  keys: { anthropic: '', openai: '', google: '' },
+  filterSuggestion: '',
+  lastInputWasFiltered: false,
+  safetyBlocked: false,
+  filteredTurnIndices: [],
+  slideInterval: null,
+  artStyle: 'mukashi',  // mukashi | anime | western
+  ageMode: 'bouken',    // issho | bouken | creator
+  childAge: 7,          // 4〜13（スライダーで設定）
+  mainCharacter: null,  // ゲーム開始時に決定・全シーンで統一
+  firstTurn: 'ai',      // ai | human
+};
+
+let currentSlide = 0;
+
+// ============================================================
+//  BG CANVAS - floating stars
+// ============================================================
+(function initBg() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  for (let i = 0; i < 40; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 3 + 1,
+      dx: (Math.random() - 0.5) * 0.3,
+      dy: (Math.random() - 0.5) * 0.3,
+      color: ['#FF6B9D','#FFD93D','#6BCB77','#4ECDC4','#A78BFA','#FF9F43'][Math.floor(Math.random()*6)],
+      alpha: Math.random() * 0.4 + 0.1,
+    });
+  }
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of stars) {
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.color;
+      ctx.globalAlpha = s.alpha;
+      ctx.fill();
+      s.x += s.dx; s.y += s.dy;
+      if (s.x < 0) s.x = canvas.width;
+      if (s.x > canvas.width) s.x = 0;
+      if (s.y < 0) s.y = canvas.height;
+      if (s.y > canvas.height) s.y = 0;
+    }
+    ctx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ============================================================
+//  PRELOAD WEB SPEECH VOICES
+// ============================================================
+if ('speechSynthesis' in window) {
+  // Chromeはgetvoiceschangedイベントで声リストが取得できる
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.getVoices(); // 初回呼び出し
+}
+
+// ============================================================
+//  SCREEN NAV
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function animateMascot(el) {
+  const emojis = ['🦊','🐼','🦁','🐸','🦄','🐨','🐯','🐰'];
+  el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+  el.style.animation = 'none';
+  setTimeout(() => el.style.animation = 'bounce 2s ease-in-out infinite', 50);
+}
+
+// ============================================================
+//  STORY OPENINGS 60種類（カテゴリ別・バランス配分）
+// ============================================================
+const STORY_OPENINGS = [
+  // 🦊 動物が主役（15種）
+  'むかしむかし、もりの なかに ちいさな きつねの こが すんでいました。',
+  'げんきな うさぎの ぽんちゃんは、にんじんばたけで きんいろの たねを みつけました。',
+  'ある あさ、くまの こが かわで さかなつりを していると、みずの そこから こえが しました。',
+  'もりで いちばん ちいさな りすは、じぶんより おおきな どんぐりを みつけました。',
+  'うみべに すむ ちびペンギンの ぺーたは、きょうも なみと かけっこを していました。',
+  'ふわふわの しろい ひつじが くもの うえを あるいていると、したの まちが ちいさく みえました。',
+  'あおい はねを もつ ことりの ちーちゃんは、まいにち うたを うたいながら そらを とんでいました。',
+  'のはらに すむ ちいさな ねずみは、じぶんより おおきな チーズを みつけて こまってしまいました。',
+  'かめの かめきちは、ゆっくり あるきながら せかいで いちばん うつくしい はなを さがしていました。',
+  'ある はるの ひ、たぬきの ぽんたが はらを たたくと、ふしぎな おとが でました。',
+  'もりの おくに すむ ふくろうは、まいばん ほしに おねがいごとを していました。',
+  'きつねの きーちゃんは、おちばの なかに ひかる ものを みつけて ほりおこしました。',
+  'ちいさな かえるが ひとつ、おおきな かわを わたろうと いっしょうけんめい かんがえていました。',
+  'きのこの まちに すむ むしたちは、ことし いちばん おおきな きのこを そだてようと していました。',
+  'そらを とぶ こいのぼりの なかに、ほんものの こいが まじっていました。',
+
+  // 🧒 こどもが主役（15種）
+  'はなちゃんが こうえんで あそんでいると、くさの したから ちいさな こえが きこえました。',
+  'たろうくんは あさ めを さますと、じぶんの て が うさぎの てに なっていました。',
+  'みきちゃんが そらを みあげると、くもが うさぎの かたちに なって うごいていました。',
+  'ゆうとくんが どろだんごを つくっていると、それが ぴかぴかに ひかりはじめました。',
+  'こはるちゃんは おばあちゃんの いえで、だれも あけたことのない ふるい はこを みつけました。',
+  'そうたくんが ランドセルを あけると、なかに みたことのない ちいさな ひとが すわっていました。',
+  'ゆきちゃんが たんじょうびに もらった たねを うえると、よるの うちに そらまで とどく きが はえました。',
+  'まさとくんは ともだちと かくれんぼを していて、だれも しらない ばしょを みつけました。',
+  'さくらちゃんが かいた えが、とつぜん うごきだして えから とびだしてきました。',
+  'けんたくんが ふしぎな いしを ひろうと、いしが しゃべりだしました。',
+  'あいちゃんは まよなかに めが さめると、まどの そとに ほしが ひとつ ちかづいてきました。',
+  'りょうくんが じてんしゃで はしっていると、しらないみちに まいこんでしまいました。',
+  'ももこちゃんの かがみに、ことなる せかいが うつっているのを みつけました。',
+  'はると くんが にわで あなを ほると、ちかに つながる かいだんが ありました。',
+  'なつきちゃんは おまつりで まいごに なり、あかい ちょうちんの みせに はいりました。',
+
+  // ✨ まほう・ふしぎ系（15種）
+  'ふるい ほんだなの うしろに、だれも しらない ちいさな とびらが ありました。',
+  'にじが きえた あとに、そらから ちいさな てがみが ひらひら おちてきました。',
+  'まいごに なった ふうせんを おいかけると、みたことのない まちに でました。',
+  'うみべで ひろった かいがらに みみを あてると、ふしぎな おんがくが きこえました。',
+  'まほうの たねを うえたら、つぎの あさ そらまで とどく きが はえていました。',
+  'まんまるの つきが みどりいろに ひかった よる、まちの どうぶつたちが しゃべりはじめました。',
+  'ふしぎな おみせが あって、そこでは ゆめを かったり うったり できました。',
+  'あめが やんだ あと、にじの はしに ちいさな いえが たっていました。',
+  'としょかんの いちばん おくの ほんだなに、よむと なかに はいれる ほんが ありました。',
+  'ゆきだるまが よるに なると あるきまわり、こどもたちの なやみを きいていました。',
+  'ほしが ひとつ おちてきて、こうえんの いけに ぽちゃんと おちました。',
+  'まほうつかいが おとした つえが、かわに ながれていきました。',
+  'ある ひ、かげが じぶんと ちがう うごきを しはじめました。',
+  'くつやの おじさんが つくった くつを はくと、はきたい ばしょに いつのまにか いました。',
+  'てるてるぼうずが よるに なると うごきだして、あしたの てんきを きめていました。',
+
+  // 🌍 ぼうけん・たび系（15種）
+  'おおきな ちずを みつけた こぐまは、しるしの ついた ばしょを めざして あるきはじめました。',
+  'くものうえに きんいろの しろが あると きいて、こどもたちは そらへの のぼりかたを かんがえました。',
+  'うみの そこに まちが あると いう うわさを きいて、にんぎょに あいに いくことに しました。',
+  'やまの てっぺんには ねがいを かなえる いしが あると おじいさんが おしえてくれました。',
+  'きしゃに のって いちばん とおい えきで おりると、そこは ふしぎな しまでした。',
+  'もりの おくに すすむと、どの ちずにも のっていない むらが ありました。',
+  'おじいちゃんが のこした ふねに のると、かわが ひかりながら どこかへ ながれていきました。',
+  'そらに うかぶ しまを めざして、こどもたちは きのえだで いかだを つくりました。',
+  'ながれぼしを おいかけて はしっていると、ふしぎな どうくつに たどりつきました。',
+  'まほうの じゅうたんが いえに とどいて、のると じぶんで とびたちました。',
+  'ちかてつの おわりの えきで おりると、そとは むかしの えどの まちでした。',
+  'そうじを していたら ゆかに あなが あいていて、なかを のぞくと べつの せかいが みえました。',
+  'おばあちゃんの にわの いずみに コインを なげると、ねがいごとの くに への とびらが ひらきました。',
+  'むらの はずれに ある おおきな かがみは、のぞくと ちがう じだいが みえると いわれていました。',
+  'あき の はれた ひ、たかい たかい きの てっぺんに、きんいろの はこが ひっかかっているのを みつけました。',
+];
+
+function getRandomOpening() {
+  // 直前と同じものが出ないように管理
+  if (!getRandomOpening._used) getRandomOpening._used = [];
+  let idx;
+  let tries = 0;
+  do {
+    idx = Math.floor(Math.random() * STORY_OPENINGS.length);
+    tries++;
+  } while (getRandomOpening._used.includes(idx) && tries < 20);
+  // 使用済みリスト管理（最後の10件だけ覚える）
+  getRandomOpening._used.push(idx);
+  if (getRandomOpening._used.length > 10) getRandomOpening._used.shift();
+  return STORY_OPENINGS[idx];
+}
+
+// ============================================================
+//  AGE MODE SETTINGS（3層モデル）
+// ============================================================
+const MODE_SETTINGS = {
+  issho: {
+    label: '🌱 いっしょ',
+    maxTurns: 8,
+    filterLevel: 'strict',
+    hiraganaOnly: true,
+    storyComplexity: 'simple',
+    systemPrompt: 'あなたは4〜6さいの ちいさな こどもに よみきかせを する やさしい ナレーターです。ルール：①ひらがなのみ（かんじ・カタカナ使用禁止）②1文のみ・みじかく③あたたかく やさしい ないよう④どうぶつや にちじょうの できごと⑤こわい・くらい ないよう禁止⑥物語のつづきの文のみ出力',
+    openingFilter: ['animal', 'daily'],
+    artStyles: ['mukashi','anime','western'],
+    hideStyleBar: false,
+    fontSize: '1.2rem',
+    continuationLabel: '5かい',
+  },
+  bouken: {
+    label: '🌟 ぼうけん',
+    maxTurns: 10,
+    filterLevel: 'normal',
+    hiraganaOnly: false,
+    storyComplexity: 'normal',
+    systemPrompt: 'あなたは4〜8さいの こどもむけ ものがたりの ナレーターです。ルール：①ひらがなを メインに つかう（かんたんな かんじは OK）②1〜2文のみ③物語の つづきの文のみ出力④質問・確認・感想・「〜したいですか？」は 絶対に書かない',
+    openingFilter: null,               // 全60種
+    artStyles: ['mukashi','anime','western'],
+    fontSize: '1rem',
+    continuationLabel: '10かい',
+  },
+  creator: {
+    label: '🔥 クリエイター',
+    maxTurns: 10,
+    filterLevel: 'light',
+    hiraganaOnly: false,
+    storyComplexity: 'complex',
+    systemPrompt: 'あなたは11〜13歳の子供向け即興物語のナレーターです。ルール：①漢字・ひらがな・カタカナを自然に使う②2〜3文・深みのある内容③感情・葛藤・どんでん返しを意識④伏線を張る⑤物語のつづきの文のみ出力⑥質問・確認は絶対に書かない',
+    openingFilter: null,               // 全60種
+    artStyles: ['mukashi','anime','western'],
+    fontSize: '1rem',
+    continuationLabel: '15かい',
+  },
+};
+
+function selectAgeMode(mode) {
+  state.ageMode = mode;
+  document.querySelectorAll('.age-mode-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('agemode-' + mode).classList.add('selected');
+  document.querySelectorAll('.style-btn').forEach(btn => btn.style.display = '');
+  // モードに合わせてスライダーの推奨値を設定
+  const defaultAge = { issho: 5, bouken: 8, creator: 12 }[mode] || 7;
+  const slider = document.getElementById('age-slider');
+  if (slider) { slider.value = defaultAge; onAgeSlider(defaultAge); }
+}
+
+function onAgeSlider(age) {
+  age = parseInt(age);
+  state.childAge = age;
+  const num = document.getElementById('age-num');
+  const badge = document.getElementById('age-desc-badge');
+  const slider = document.getElementById('age-slider');
+  if (num) num.textContent = age;
+
+  // スライダーのグラデーション更新
+  const pct = Math.round((age - 4) / (13 - 4) * 100);
+  if (slider) slider.style.setProperty('--pct', pct + '%');
+
+  // 年齢に合わせてモードを自動切り替え＆バッジ更新
+  const info = getAgeInfo(age);
+  if (badge) badge.textContent = info.badge;
+
+  // モードも年齢に合わせて自動変更
+  if (info.mode !== state.ageMode) {
+    state.ageMode = info.mode;
+    document.querySelectorAll('.age-mode-btn').forEach(b => b.classList.remove('selected'));
+    document.getElementById('agemode-' + info.mode).classList.add('selected');
+  }
+}
+
+function getAgeInfo(age) {
+  if (age <= 4) return { mode:'issho', badge:'😊 みじかくてかんたんなおはなし' };
+  if (age === 5) return { mode:'issho', badge:'🌱 やさしいことばで1ぶんずつ' };
+  if (age === 6) return { mode:'issho', badge:'🌱 すこしながめのおはなしもOK' };
+  if (age === 7) return { mode:'bouken', badge:'🌟 ぼうけんモードがおすすめ！' };
+  if (age === 8) return { mode:'bouken', badge:'🌟 かんじもすこしつかえるよ' };
+  if (age === 9) return { mode:'bouken', badge:'🌟 ふくざつなおはなしもたのしめる' };
+  if (age === 10) return { mode:'bouken', badge:'🌟 もっとふかいものがたりへ' };
+  if (age === 11) return { mode:'creator', badge:'🔥 クリエイターモードへようこそ' };
+  if (age === 12) return { mode:'creator', badge:'🔥 かんじもつかってほんかくそうさく' };
+  return { mode:'creator', badge:'🔥 おとなとほぼおなじふかさで' };
+}
+
+// 年齢別のsystemPromptを動的生成
+function getAgeSystemPrompt() {
+  const age = state.childAge || 7;
+  // 全年齢共通：言い直し禁止・必ず新展開を追加するナレーター
+  const base = 'あなたは即興物語ゲームのナレーターです。こどもの発言を受け入れた上で、必ず新しい展開・キャラクター・出来事を加えてストーリーを前に進める。こどもの言葉をそのまま言い直すだけは絶対禁止。文のみ出力（説明・質問・感想は書かない）。身体の部位（ちんちん・おちんちん等）は物語に書かない・かわりに「しっぽ」「どんぐり」などに置き換えて使う。';
+
+  if (age <= 4) return base + '4歳向け：ひらがなのみ。1文・超短く（15文字以内）。動物が主役。明るく楽しい内容のみ。';
+  if (age === 5) return base + '5歳向け：ひらがなのみ。1文（20文字以内）。「すると〜が あらわれた！」「なんと〜に なった！」などの展開パターンを使う。';
+  if (age === 6) return base + '6歳向け：ひらがなメイン。1文（25文字以内）。驚きと面白さを必ず入れる。感嘆符や擬音語（ぴかっ・どかん・ふわっ）を使うと良い。';
+  if (age === 7) return base + '7歳向け：ひらがなメイン（簡単な漢字OK）。1〜2文。驚きの展開と変化を入れる。';
+  if (age === 8) return base + '8歳向け：ひらがな・漢字混在。1〜2文。感情・変化・予想外の展開を入れる。';
+  if (age === 9) return base + '9歳向け：自然な文体。1〜2文。伏線・驚きのある転換を入れる。';
+  if (age === 10) return base + '10歳向け：自然な文体。2文。感情・葛藤・どんでん返しを入れる。';
+  if (age === 11) return base + '11歳向け：漢字・ひらがな自然に。2文。複雑な感情・伏線を入れる。';
+  if (age === 12) return base + '12歳向け：自然な文体。2〜3文。伏線・どんでん返し・人物の感情の変化を入れる。';
+  return base + '13歳向け：豊かな文体。2〜3文。深い感情・葛藤・予想外の大きな転換を入れる。';
+}
+
+// ============================================================
+//  ART STYLE
+// ============================================================
+const ART_STYLES = {
+  mukashi: {
+    label: 'むかしばなし',
+    prompt: 'まんが日本昔ばなし（TBSアニメ1975年）スタイル。柔らかい水彩タッチ、丸い頭・小さな弧の目・丸いピンクの頬・鼻なし・ずんぐりした体のキャラクター、和風背景、暖かみのある色彩、子供向けかみしばい。'
+  },
+  anime: {
+    label: 'アニメ風',
+    prompt: '現代日本アニメスタイル（2020年代・明るい少年アニメ風）。大きなキラキラした瞳、鮮やかな色彩、丁寧な背景美術、柔らかいセルシェーディング、子供向け冒険アニメの1シーン。'
+  },
+
+  western: {
+    label: 'アメコミ風',
+    prompt: 'アメリカンカートゥーンスタイル（カートゥーンネットワーク風）。太いアウトライン、ポップで鮮やかな原色、大げさな表情とポーズ、ユーモラスで元気いっぱいの子供向けイラスト。'
+  }
+};
+
+function selectArtStyle(style) {
+  state.artStyle = style;
+  // セットアップ画面のボタン同期（存在チェック付き）
+  document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('selected'));
+  const setupBtn = document.getElementById('artstyle-' + style);
+  if (setupBtn) setupBtn.classList.add('selected');
+}
+
+function switchArtStyle(style) {
+  // ゲーム中の切り替え（次のターンから反映）
+  selectArtStyle(style);
+  showToast(`🎨 つぎの え から「${ART_STYLES[style].label}」に なるよ！`);
+}
+
+// ============================================================
+//  SETUP
+// ============================================================
+let childCount = 1, adultCount = 0;
+
+function selectMode(mode) {
+  state.mode = mode;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('mode-' + mode).classList.add('selected');
+  const needsAdult = ['ai-child-adult','human-only','ai-group'].includes(mode);
+  document.getElementById('adult-row').style.display = needsAdult ? 'flex' : 'none';
+  if (!needsAdult) { adultCount = 0; document.getElementById('adult-count').textContent = '0'; }
+  // AIがいるモードのときだけ「だれからはじめる？」を表示
+  const hasAI = mode !== 'human-only';
+  document.getElementById('first-turn-card').style.display = hasAI ? '' : 'none';
+  updatePlayerNameInputs();
+}
+
+function selectFirstTurn(who) {
+  state.firstTurn = who;
+  document.getElementById('first-ai').classList.toggle('selected', who === 'ai');
+  document.getElementById('first-human').classList.toggle('selected', who === 'human');
+}
+
+function changeCount(type, delta) {
+  if (type === 'child') {
+    childCount = Math.max(1, Math.min(4, childCount + delta));
+    document.getElementById('child-count').textContent = childCount;
+  } else {
+    adultCount = Math.max(0, Math.min(3, adultCount + delta));
+    document.getElementById('adult-count').textContent = adultCount;
+  }
+  updatePlayerNameInputs();
+}
+
+function updatePlayerNameInputs() {
+  const container = document.getElementById('player-names-container');
+  container.innerHTML = '';
+  for (let i = 0; i < childCount; i++) {
+    container.appendChild(makeNameInput('child', i));
+  }
+  for (let i = 0; i < adultCount; i++) {
+    container.appendChild(makeNameInput('adult', i));
+  }
+}
+
+function makeNameInput(role, idx) {
+  const avatars = role === 'child' ? AVATARS_CHILD : AVATARS_ADULT;
+  const avatar = avatars[idx % avatars.length];
+  const defaultName = role === 'child' ? `こども${idx + 1}` : `おとな${idx + 1}`;
+  const div = document.createElement('div');
+  div.className = 'player-name-input';
+  div.innerHTML = `<span class="avatar">${avatar}</span>
+    <input type="text" placeholder="${defaultName}" data-role="${role}" data-idx="${idx}" data-avatar="${avatar}" value="${defaultName}" />`;
+  return div;
+}
+
+// Initialize
+updatePlayerNameInputs();
+
+function startGame() {
+  state.keys.anthropic = document.getElementById('api-anthropic').value.trim();
+  state.keys.openai = document.getElementById('api-openai').value.trim();
+  state.keys.google = document.getElementById('api-google').value.trim();
+
+  // チェックボックスが入っていたらlocalStorageに保存
+  if (document.getElementById('save-keys-check')?.checked) {
+    try {
+      localStorage.setItem('ehon_keys', JSON.stringify({
+        anthropic: state.keys.anthropic,
+        openai: state.keys.openai,
+        google: state.keys.google,
+      }));
+    } catch(e) {}
+  }
+
+  // Build players array
+  state.players = [];
+  document.querySelectorAll('#player-names-container input').forEach(inp => {
+    state.players.push({
+      id: state.players.length,
+      name: inp.value || inp.placeholder,
+      role: inp.dataset.role,
+      avatar: inp.dataset.avatar,
+    });
+  });
+
+  // Add AI player if needed
+  if (state.mode !== 'human-only') {
+    const aiPlayer = { id: 'ai', name: 'AIおはなし', role: 'ai', avatar: '✨' };
+    if (state.firstTurn === 'ai') {
+      state.players.unshift(aiPlayer); // AIが先頭→AIからスタート
+    } else {
+      state.players.push(aiPlayer);    // AIが末尾→人間からスタート
+    }
+  }
+
+  state.currentPlayerIdx = 0;
+  state.turns = [];
+  state.totalTurns = 0;
+
+  // 年齢モードの設定を適用
+  const cfg = MODE_SETTINGS[state.ageMode];
+  state.maxTurns = cfg.maxTurns;
+
+  // ゲーム画面のモードバッジ更新
+  document.getElementById('mode-badge').textContent = cfg.label;
+
+  // ストーリーテキストのフォントサイズ調整
+  document.querySelectorAll('.story-text').forEach(el => el.style.fontSize = cfg.fontSize);
+
+  // 全シーンで統一するメインキャラクターを1体決定
+  state.mainCharacter = pickMainCharacter();
+
+  bgGenCompleted = 0; bgGenTotal = 0;
+  imageGenQueue.length = 0; imageGenRunning = false;
+  state.safetyBlocked = false;
+  buildTurnDots();
+  updateCurrentPlayerBadge();
+  showScreen('game');
+  showToast(`${cfg.label} で はじまるよ！ 🎉`);
+}
+
+function pickMainCharacter() {
+  const characters = [
+    '丸くて小さな男の子（短い黒髪・赤いシャツ・青いズボン・丸い顔・大きな黒目・ぷっくりした赤い頬）',
+    '丸くて小さな女の子（おさげの黒髪・黄色いワンピース・丸い顔・大きな黒目・ぷっくりした赤い頬）',
+    '丸くて小さな男の子（茶色いくせ毛・緑のシャツ・茶色のズボン・丸い顔・大きな黒目・ぷっくりした赤い頬）',
+    '小さなきつね（オレンジ色の毛・白いしっぽ・大きな耳・まんまるの目）',
+    '小さなくま（茶色い毛・まるい耳・大きな黒目・ずんぐりした体）',
+    '小さなうさぎ（白い毛・ピンクの耳・大きな赤い目・ふわふわのしっぽ）',
+  ];
+  return characters[Math.floor(Math.random() * characters.length)];
+}
+
+// ============================================================
+//  TURN DOTS
+// ============================================================
+function buildTurnDots() {
+  const container = document.getElementById('turn-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'turn-dot' + (i === 0 ? ' current' : '');
+    dot.id = `dot-${i}`;
+    container.appendChild(dot);
+  }
+  document.getElementById('turn-label').textContent = `1 / ${state.maxTurns}`;
+}
+
+function updateTurnDots() {
+  const n = state.totalTurns;
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.getElementById(`dot-${i}`);
+    if (!dot) continue;
+    dot.className = 'turn-dot' + (i < n ? ' done' : i === n ? ' current' : '');
+  }
+  document.getElementById('turn-label').textContent = `${n + 1} / ${state.maxTurns}`;
+}
+
+// ============================================================
+//  CURRENT PLAYER
+// ============================================================
+function updateCurrentPlayerBadge() {
+  const p = state.players[state.currentPlayerIdx];
+  if (!p) return;
+  document.getElementById('badge-avatar').textContent = p.avatar;
+  document.getElementById('badge-name').textContent =
+    p.role === 'ai' ? 'AIおはなしのばん！' : `${p.name}のばん！`;
+  document.getElementById('badge-hint').textContent =
+    p.role === 'ai'
+      ? 'AIがおはなしをつくっているよ…'
+      : '「はい、すると…」のつづきをはなしてね 🎙️';
+
+  const isAI = p.role === 'ai';
+  document.getElementById('voice-controls').style.display = isAI ? 'none' : 'flex';
+
+  if (isAI) {
+    setTimeout(() => generateAITurn(), 600);
+  }
+}
+
+function advancePlayer() {
+  state.currentPlayerIdx = (state.currentPlayerIdx + 1) % state.players.length;
+}
+
+// ============================================================
+//  VOICE INPUT (MediaRecorder + WebSpeech)
+// ============================================================
+let recognition = null;
+
+function initSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.lang = 'ja-JP';
+  r.continuous = false;
+  r.interimResults = true;
+  r.onresult = (e) => {
+    let transcript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    state.recognizedText = transcript;
+    const _ta1 = document.getElementById('recognized-text'); _ta1.value = transcript || ''; _ta1.placeholder = transcript ? '' : '…きいているよ…';
+    if (e.results[e.results.length - 1].isFinal) {
+      document.getElementById('btn-send').disabled = !transcript.trim();
+    }
+  };
+  r.onerror = () => {};
+  return r;
+}
+
+async function startRecording() {
+  if (state.isRecording) return;
+  state.isRecording = true;
+  state.audioChunks = [];
+  state.pendingAudioBlob = null;
+  state.recognizedText = '';
+  const _ta2 = document.getElementById('recognized-text'); _ta2.value = ''; _ta2.placeholder = '…きいているよ…';
+  document.getElementById('btn-send').disabled = true;
+
+  const btn = document.getElementById('record-btn');
+  btn.classList.add('recording');
+  document.getElementById('waveform').classList.add('active');
+
+  // Start MediaRecorder for audio capture
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    state.mediaRecorder = new MediaRecorder(stream);
+    state.mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) state.audioChunks.push(e.data);
+    };
+    state.mediaRecorder.onstop = () => {
+      state.pendingAudioBlob = new Blob(state.audioChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+    };
+    state.mediaRecorder.start();
+  } catch (e) { console.warn('MediaRecorder error:', e); }
+
+  // Start speech recognition
+  recognition = initSpeechRecognition();
+  if (recognition) recognition.start();
+}
+
+function stopRecording() {
+  if (!state.isRecording) return;
+  state.isRecording = false;
+
+  document.getElementById('record-btn').classList.remove('recording');
+  document.getElementById('waveform').classList.remove('active');
+
+  if (recognition) { try { recognition.stop(); } catch(e){} recognition = null; }
+  if (state.mediaRecorder && state.mediaRecorder.state === 'recording') {
+    state.mediaRecorder.stop();
+  }
+
+  setTimeout(() => {
+    const text = state.recognizedText.trim();
+    const ta = document.getElementById('recognized-text');
+    const eh = document.getElementById('edit-hint');
+    const bar = document.getElementById('edit-confirm-bar');
+    if (text) {
+      ta.value = text;
+      ta.style.borderStyle = 'dashed'; ta.style.borderColor = 'var(--pink)'; ta.style.textAlign = 'center';
+      ta.style.background = 'rgba(255,255,255,0.9)';
+      if (eh) eh.style.display = 'block';
+      if (bar) bar.style.display = 'none';
+      document.getElementById('btn-send').disabled = false;
+    } else {
+      ta.value = ''; ta.placeholder = 'もういちどはなしてね 🎙️';
+      if (eh) eh.style.display = 'none';
+      if (bar) bar.style.display = 'none';
+    }
+  }, 400);
+}
+
+function clearInput() {
+  state.recognizedText = '';
+  state.pendingAudioBlob = null;
+  state.filteredTurnIndices = [];
+  state.lastInputWasFiltered = false;
+  imageGenQueue.length = 0; imageGenRunning = false;
+  const _tac = document.getElementById('recognized-text');
+  _tac.value = ''; _tac.placeholder = 'ここにことばがでるよ 👆'; _tac.readOnly = true;
+  const _bar = document.getElementById('edit-confirm-bar');
+  if (_bar) _bar.style.display = 'none';
+  const _ehc = document.getElementById('edit-hint');
+  if (_ehc) _ehc.style.display = 'none';
+  document.getElementById('btn-send').disabled = true;
+  document.getElementById('text-input').value = '';
+}
+
+function onRecognizedFocus() {
+  // テキストエリアにフォーカスしたら編集モード
+  const ta = document.getElementById('recognized-text');
+  const bar = document.getElementById('edit-confirm-bar');
+  const hint = document.getElementById('edit-hint');
+  ta.style.borderStyle = 'solid';
+  ta.style.borderColor = 'var(--purple)';
+  ta.style.textAlign = 'left';
+  ta.style.background = 'white';
+  if (bar) bar.style.display = 'flex';
+  if (hint) hint.style.display = 'none';
+}
+
+function onRecognizedBlur() {
+  // フォーカスが外れても確定バーが見える間は編集モード継続
+  // confirmEditで確定するまで保持
+}
+
+function confirmEdit() {
+  const ta = document.getElementById('recognized-text');
+  const bar = document.getElementById('edit-confirm-bar');
+  const hint = document.getElementById('edit-hint');
+  ta.style.borderStyle = 'dashed';
+  ta.style.borderColor = 'var(--pink)';
+  ta.style.textAlign = 'center';
+  ta.style.background = 'rgba(255,255,255,0.9)';
+  if (bar) bar.style.display = 'none';
+  if (hint && ta.value.trim()) hint.style.display = 'block';
+  state.recognizedText = ta.value.trim();
+  document.getElementById('btn-send').disabled = !ta.value.trim();
+  ta.blur();
+}
+
+// 旧toggleEditModeは互換性のため残す
+function toggleEditMode() { onRecognizedFocus(); }
+
+function onRecognizedEdit(val) {
+  state.recognizedText = val.trim();
+  document.getElementById('btn-send').disabled = !val.trim();
+}
+
+function clearSavedKeys() {
+  try { localStorage.removeItem('ehon_keys'); } catch(e) {}
+  ['api-anthropic','api-openai','api-google'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const chk = document.getElementById('save-keys-check');
+  if (chk) chk.checked = false;
+  const btn = document.getElementById('btn-clear-keys');
+  if (btn) btn.style.display = 'none';
+  showToast('🗑 保存したAPIキーを削除しました');
+}
+
+function toggleTextInput() {
+  const row = document.getElementById('text-input-row');
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+}
+
+function submitFromText() {
+  const val = document.getElementById('text-input').value.trim();
+  if (!val) return;
+  state.recognizedText = val;
+  submitTurn();
+}
+
+// ============================================================
+//  INAPPROPRIATE WORD FILTER
+// ============================================================
+let filterCallback = null;
+
+const SIMPLE_FILTER_WORDS = [
+  // 悪口・暴言
+  'ばか','きもい','しね','ころす','きらい','くそ','ちくしょう','あほ',
+  'むかつく','うざい','きえろ','いじめ',
+  // 性的な言葉（うんち・うんこ・おしりは子供の日常語なので除外）
+  'おちんちん','ちんちん','まんこ','ちくび','きんたま','せっくす','えっち',
+  'はだか','ぬーど','せいき','いんぽ',
+  // 暴力・死関連
+  '死','殺','血','暴力','地獄','自殺','殴','刺',
+  '出血','墓','死亡','死体','遺体','銃','刀','ナイフ'
+];
+
+async function checkAndFilter(text) {
+  // ローカル辞書のみでチェック（AI 2次チェックは廃止）
+  // 理由：Claude APIは子供の日常語（うんち等）を過剰にフィルターするため
+  const hasLocal = SIMPLE_FILTER_WORDS.some(w => text.includes(w));
+
+  if (hasLocal) {
+    if (state.keys.anthropic) {
+      try {
+        const suggestion = await getFilterSuggestion(text);
+        return { needsFilter: true, suggestion };
+      } catch(e) {}
+    }
+    return { needsFilter: true, suggestion: 'もっとやさしいことばにしようね！' };
+  }
+
+  return { needsFilter: false };
+}
+
+async function getFilterSuggestion(text) {
+  const res = await callAnthropic([{
+    role: 'user',
+    content: `以下の文の不適切な言葉を、4〜8歳向けのやさしい言葉に置き換えた文だけを返してください。説明・感想・質問は不要。ひらがなメイン・短く。\n入力:「${text}」`
+  }], '置き換え後の文のみ出力する。それ以外は何も出力しない。', 80);
+  return res;
+}
+
+function showFilterPopup(text, suggestion, callback) {
+  state.filterSuggestion = suggestion;
+  filterCallback = callback;
+  // キャラクターをランダムに変える
+  const mascots = ['🦊','🐰','🐻','🌟','🌈'];
+  document.getElementById('filter-mascot').textContent =
+    mascots[Math.floor(Math.random() * mascots.length)];
+  // メッセージは固定の子供向け文言（入力テキストは出さない）
+  // 身体部位系かどうかで表示メッセージを変える
+  const bodyWords = ['おちんちん','ちんちん','まんこ','ちくび','きんたま'];
+  const isBodyWord = bodyWords.some(w => (state.recognizedText||'').includes(w));
+  document.getElementById('filter-message').innerHTML = isBodyWord
+    ? 'そのことばは おはなしの なかでは<br>つかわないことばだよ。<br>こんなことばは どうかな？ 👇'
+    : 'そのことばは、おともだちが<br>かなしくなるかも しれないよ。<br>こんなことばは どうかな？ 👇';
+  document.getElementById('filter-suggestion').textContent = suggestion
+    ? `「${suggestion}」`
+    : 'もっと やさしいことばにしようね 🌸';
+  document.getElementById('filter-popup').classList.remove('hidden');
+}
+
+function hideFilterPopup(useSuggestion) {
+  document.getElementById('filter-popup').classList.add('hidden');
+  if (useSuggestion) {
+    state.lastInputWasFiltered = true; // フィルター済みフラグ
+    if (filterCallback) filterCallback(state.filterSuggestion);
+    filterCallback = null;
+  } else {
+    state.lastInputWasFiltered = false;
+    filterCallback = null;
+    clearInput();
+    document.getElementById('btn-send').disabled = true;
+  }
+}
+
+// ============================================================
+//  SUBMIT TURN
+// ============================================================
+async function submitTurn() {
+  let text = state.recognizedText.trim();
+  if (!text) return;
+
+  document.getElementById('btn-send').disabled = true;
+
+  // Filter check
+  const { needsFilter, suggestion } = await checkAndFilter(text);
+  if (needsFilter) {
+    showFilterPopup(text, suggestion || 'やさしいことばにしよう', (replacement) => {
+      const finalText = replacement || text;
+      processTurn(finalText);
+    });
+    return;
+  }
+
+  processTurn(text);
+}
+
+async function processTurn(text) {
+  const player = state.players[state.currentPlayerIdx];
+
+  // いっしょ・ぼうけんモードでは漢字をひらがなに変換して表示
+  const displayText = await toHiragana(text);
+
+  // Add to story log
+  addStoryBubble(player, displayText);
+
+  const turnData = {
+    playerIdx: state.currentPlayerIdx,
+    text: displayText,
+    imageUrl: null,
+    audioBlob: state.pendingAudioBlob,
+    audioUrl: state.pendingAudioBlob ? URL.createObjectURL(state.pendingAudioBlob) : null,
+  };
+  state.turns.push(turnData);
+  state.totalTurns++;
+
+  clearInput();
+  updateTurnDots();
+
+  // Generate image
+  // フィルターを通ったターンのインデックスを記録し、contextから除外する
+  const currentTurnIdx = state.turns.length - 1;
+  if (state.lastInputWasFiltered) {
+    state.filteredTurnIndices.push(currentTurnIdx);
+  }
+  const imageText = state.lastInputWasFiltered
+    ? getSafeImageText()
+    : displayText;
+  state.lastInputWasFiltered = false;
+  generateSceneImageBackground(imageText, currentTurnIdx); // キューに追加（非同期）
+
+  // Check if at max turns
+  if (state.totalTurns >= state.maxTurns) {
+    setTimeout(() => {
+      document.getElementById('continue-popup').classList.remove('hidden');
+    }, 800);
+    return;
+  }
+
+  advancePlayer();
+  updateCurrentPlayerBadge();
+}
+
+// ============================================================
+//  AI TURN
+// ============================================================
+async function generateAITurn() {
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}:「${t.text}」`;
+  }).join('\n');
+
+  const opening = context ? null : getRandomOpening();
+  const age = state.childAge || 7;
+
+  // 直前のユーザー発言を取り出す
+  const lastUserTurn = [...state.turns].reverse().find(t => {
+    const p = state.players[t.playerIdx];
+    return p && p.role !== 'ai';
+  });
+  const lastUserText = lastUserTurn ? lastUserTurn.text : null;
+
+  // 「次の展開のヒント」をランダムで選ぶ（AIが同じパターンに陥らないよう）
+  const nextHints = [
+    'そこに知らない誰か（動物・人・モノ）が現れる',
+    '突然おもしろいことが起きる',
+    '何かが変身・変化する',
+    '宝物や不思議なものが見つかる',
+    'どこか新しい場所に移動する',
+    '予想外のことが起きて驚く',
+    '困ったことが起きるが助けが来る',
+    '空から何かが降ってくる',
+  ];
+  const hint = nextHints[Math.floor(Math.random() * nextHints.length)];
+
+  let prompt;
+  if (!context) {
+    prompt = `物語を1文で始めてください。この「はじまり」をさんこうにアレンジ（コピー禁止）:\n「${opening}」`;
+  } else if (lastUserText) {
+    const sentenceCount = age <= 6 ? '1文（20文字以内）' : age <= 10 ? '1〜2文' : '2文';
+    prompt = `即興物語ゲームです。
+
+【これまでの流れ】
+${context}
+
+【こどもが言ったこと】「${lastUserText}」
+
+【AIのルール・最重要】
+1. こどもの言葉を「受け入れる」→ OK（否定しない）
+2. しかし「言い直すだけ」は禁止。必ず「新しい何か」を加えてストーリーを前に進める
+3. 追加する展開のヒント（この中から1つ使う）：「${hint}」
+4. ${sentenceCount}で書く
+5. 「はい、すると…」という接続詞は使わない
+6. 文のみ出力（説明・感想・質問は絶対に書かない）
+
+悪い例：「きつねくんは うんちを して すっきり したよ。」（言い直しただけ）
+良い例：「うんちが にじいろに ひかって、ちいさな とびらが あらわれました！」（受けて＋新展開）`;
+  } else {
+    prompt = `即興物語のつづきを1〜2文で書いてください。\n\n${context}`;
+  }
+
+  try {
+    // スライダーで設定した年齢に基づくsystemPrompt（モード設定より優先）
+    const modeSys = getAgeSystemPrompt();
+    const age = state.childAge || 7;
+    const maxTok = age >= 11 ? 300 : age >= 7 ? 200 : 150;
+    const response = await callAnthropic([{ role: 'user', content: prompt }], modeSys, maxTok);
+
+    state.recognizedText = response;
+    addStoryBubble({ avatar: '✨', name: 'AIおはなし', role: 'ai' }, response);
+
+    // 🔊 AIターン直後に音声読み上げ
+    speakText(response);
+
+    const turnData = {
+      playerIdx: state.currentPlayerIdx,
+      text: response,
+      imageUrl: null,
+      audioBlob: null,
+      audioUrl: null,
+    };
+    state.turns.push(turnData);
+    state.totalTurns++;
+    updateTurnDots();
+
+    // Generate image
+    generateSceneImageBackground(response, state.turns.length - 1);
+
+    if (state.totalTurns >= state.maxTurns) {
+      setTimeout(() => document.getElementById('continue-popup').classList.remove('hidden'), 1000);
+      return;
+    }
+
+    state.recognizedText = '';
+    advancePlayer();
+    updateCurrentPlayerBadge();
+  } catch (e) {
+    console.error('AI turn error:', e);
+    showToast('AIのこたえがとれなかったよ…もう一度ためしてね');
+    advancePlayer();
+    updateCurrentPlayerBadge();
+  }
+}
+
+// ============================================================
+//  IMAGE GENERATION
+// ============================================================
+// ============================================================
+// 画像生成キュー（Tier 1: 直列で1枚ずつ生成・レート制限対応）
+// ============================================================
+const imageGenQueue = [];
+let imageGenRunning = false;
+
+// 画像生成用テキストから不適切語を安全な言葉に置換
+function sanitizeImageText(text) {
+  const replacements = [
+    ['おちんちん', 'しっぽ'],
+    ['ちんちん',   'しっぽ'],
+    ['まんこ',     'おはな'],
+    ['ちくび',     'ボタン'],
+    ['きんたま',   'どんぐり'],
+    ['おしり',     'しっぽのした'],
+    ['うんこ',     'まるいもの'],
+    ['うんち',     'まるいもの'],
+    ['はだか',     'ふわふわ'],
+    ['せっくす',   'あそぶ'],
+    ['えっち',     'たのしい'],
+    ['ハゲ',       'まるいあたま'],
+    ['はげ',       'まるいあたま'],
+  ];
+  let safe = text;
+  for (const [ng, ok] of replacements) {
+    safe = safe.replaceAll(ng, ok);
+  }
+  return safe;
+}
+
+function generateSceneImageBackground(text, turnIdx) {
+  if (!state.keys.openai) return;
+  bgGenTotal++;
+  const bar = document.getElementById('bg-gen-progress');
+  if (bar) bar.style.display = 'flex';
+  updateBgGenProgress();
+  // キューに追加して順番待ち
+  imageGenQueue.push({ text, turnIdx });
+  if (!imageGenRunning) processImageQueue();
+}
+
+async function processImageQueue() {
+  imageGenRunning = true;
+  while (imageGenQueue.length > 0) {
+    const { text, turnIdx } = imageGenQueue.shift();
+    const currentNum = bgGenCompleted + 1;
+    // 生成開始を通知
+    updateWaitingStatus('generating', { current: currentNum, total: bgGenTotal });
+    try {
+      await generateSceneImage(sanitizeImageText(text), turnIdx);
+    } catch(e) {
+      console.warn('Image gen failed for turn', turnIdx, e.message);
+      updateWaitingStatus('error_network', { msg: e.message?.substring(0, 40) || 'unknown' });
+    }
+    bgGenCompleted++;
+    updateBgGenProgress();
+    if (bgGenCompleted >= bgGenTotal) {
+      const b = document.getElementById('bg-gen-progress');
+      if (b) setTimeout(() => b.style.display = 'none', 1500);
+      updateWaitingStatus('done', {});
+    } else {
+      updateWaitingStatus('partial_done', { done: bgGenCompleted, total: bgGenTotal });
+    }
+    if (imageGenQueue.length > 0) {
+      if (state.safetyBlocked) {
+        // 安全システムブロック後は60秒カウントダウン
+        updateBgGenProgressLabel('⏳ あんぜんシステムが はたらきました。しばらく まってね…');
+        let sec = 60;
+        while (sec > 0 && state.safetyBlocked) {
+          updateWaitingStatus('safety_cooldown', { sec });
+          await new Promise(r => setTimeout(r, 1000));
+          sec--;
+        }
+        state.safetyBlocked = false;
+      } else {
+        // レート制限対応の待機（カウントダウン表示）
+        let sec = 3;
+        while (sec > 0) {
+          updateWaitingStatus('waiting_rate', { sec, current: bgGenCompleted + 1, total: bgGenTotal });
+          await new Promise(r => setTimeout(r, 1000));
+          sec--;
+        }
+      }
+    }
+  }
+  imageGenRunning = false;
+}
+
+function updateBgGenProgress() {
+  const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+  const bar = document.getElementById('bg-gen-bar');
+  const label = document.getElementById('bg-gen-label');
+  if (bar) bar.style.width = pct + '%';
+  if (label) label.textContent = bgGenCompleted >= bgGenTotal
+    ? 'えができたよ！ 🎉'
+    : 'えをかいているよ… ' + bgGenCompleted + '/' + bgGenTotal;
+}
+
+function updateBgGenProgressLabel(msg) {
+  const label = document.getElementById('bg-gen-label');
+  if (label) label.textContent = msg;
+}
+
+async function generateSceneImage(text, turnIdx) {
+  if (!state.keys.openai) return;
+
+  // (gen-overlay removed)
+
+  // フィルターされたターンのテキストをcontextから除外（APIへの汚染を防ぐ）
+  const storyContext = state.turns
+    .slice(0, turnIdx + 1)
+    .filter((_, i) => !state.filteredTurnIndices.includes(i))
+    .map(t => t.text)
+    .join(' ');
+  const imagePrompt = buildImagePrompt(storyContext, text);
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.keys.openai}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1',
+        prompt: imagePrompt,
+        n: 1,
+        size: '1536x1024',   // gpt-image-1 valid: 1024x1024 | 1536x1024 | 1024x1536
+        quality: 'medium',   // gpt-image-1 valid: low | medium | high
+      }),
+    });
+
+    if (!res.ok) {
+      let errBody = '';
+      try { errBody = await res.text(); } catch(_) {}
+      let errMsg = '';
+      try {
+        const errJson = JSON.parse(errBody);
+        errMsg = errJson?.error?.message || errBody;
+      } catch(_) { errMsg = errBody; }
+      console.error('Image API error', res.status, errMsg);
+
+      // OpenAIの安全システムに引っかかった場合は子供向けメッセージ
+      if (errMsg.includes('safety') || errMsg.includes('rejected') || errMsg.includes('content policy')) {
+        // 安全システムブロック → フラグを立てて冷却期間を発動
+        state.safetyBlocked = true;
+        showSafetyBlockMessage();
+      } else if (res.status === 400) {
+        showImageError('えのせいせいにしっぱいしたよ', 'もうすこし かんたんな おはなしに してみよう！');
+      } else if (res.status === 401 || errMsg.includes('invalid_api_key') || errMsg.includes('Incorrect API key')) {
+        updateWaitingStatus('error_auth', {});
+        showSafetyBlockMessage();
+      } else if (res.status === 429 || errMsg.includes('rate_limit') || errMsg.includes('quota')) {
+        updateWaitingStatus('error_auth', { msg: 'APIの残高不足またはレート制限超過' });
+        showImageError('残高不足 / レート超過', errMsg.substring(0, 60));
+      } else {
+        showImageError(`エラー ${res.status}`, errMsg.substring(0, 80));
+      }
+      return;
+    }
+
+    const data = await res.json();
+    const imageData = data.data?.[0];
+    if (!imageData) {
+      console.warn('No image data in response:', data);
+      showImageError('データなし', JSON.stringify(data).substring(0, 100));
+      return;
+    }
+
+    // gpt-image-1 returns b64_json (not url)
+    const imgSrc = imageData.b64_json
+      ? `data:image/png;base64,${imageData.b64_json}`
+      : imageData.url || null;
+
+    if (imgSrc) {
+      state.turns[turnIdx].imageUrl = imgSrc;
+      // フィナーレでのみ表示
+    } else {
+      showImageError('画像URLなし', JSON.stringify(imageData).substring(0, 100));
+    }
+  } catch (e) {
+    console.error('Image generation error:', e);
+    console.warn('Image gen error:', e.message); showToast('⚠️ えのせいせいにしっぱいしたよ');
+  } finally {
+    // (gen-overlay removed)
+  }
+}
+
+function showImageError(title, detail) {
+  showToast(`⚠️ えのせいせい: ${title}`);
+  console.warn('Image error:', title, detail);
+}
+
+function showSafetyBlockMessage() {
+  // 保護者向けの説明をトーストで表示
+  const msg = '⚠️【おとなのかたへ】OpenAIの安全システムが作動しました。絵の生成が一時停止します。数分後に再度お試しください。';
+  // 通常より長く表示するため専用トーストを作成
+  const el = document.createElement('div');
+  el.style.cssText = `
+    position:fixed; bottom:80px; left:50%; transform:translateX(-50%);
+    background:#2D2D2D; color:white; padding:14px 20px;
+    border-radius:16px; font-size:0.85rem; font-weight:700;
+    z-index:300; max-width:320px; text-align:center;
+    line-height:1.6; box-shadow:0 4px 20px rgba(0,0,0,0.4);
+    border-left:4px solid #FF9F43;
+  `;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 10000); // 10秒表示
+  console.warn('Safety block:', msg);
+}
+
+// フィルターされた入力の代わりに使う安全な場面描写
+function getSafeImageText() {
+  const safePhrases = [
+    'きれいなはなばたけで あそんでいる',
+    'おおきなきのしたで やすんでいる',
+    'あおいそらをながめている',
+    'ともだちといっしょに わらっている',
+    'ちいさないぬと なかよくしている',
+    'たのしそうに うたをうたっている',
+  ];
+  return safePhrases[Math.floor(Math.random() * safePhrases.length)];
+}
+
+function buildImagePrompt(context, currentText) {
+  const styleKey = state.artStyle || 'mukashi';
+  const stylePrompt = ART_STYLES[styleKey]?.prompt || ART_STYLES.mukashi.prompt;
+  const charDesc = state.mainCharacter || 'まんが日本昔ばなし風の丸くて可愛いこどもキャラクター';
+  return `${stylePrompt}
+【重要・キャラクター固定】メインキャラクター: ${charDesc}。このキャラクターの髪型・髪の色・服の色・顔・体型を全シーン必ず統一して描くこと。絶対に変えないこと。
+場面:「${currentText}」
+ストーリー背景:「${context.substring(0, 200)}」
+構図: 横長4:3、子供向け絵本の1シーン。
+【絶対禁止】画像の中に文字・テキスト・ひらがな・カタカナ・漢字・アルファベット・数字・記号を一切含めないこと。pure illustration only, no text, no letters, no words, no writing, no captions of any kind anywhere in the image.`;
+}
+
+function showSceneImage(src) {
+  const placeholder = document.getElementById('scene-placeholder');
+  const img = document.getElementById('scene-image');
+  img.src = src;
+  img.style.display = 'block';
+  placeholder.style.display = 'none';
+  img.style.opacity = '0';
+  setTimeout(() => { img.style.opacity = '1'; }, 50);
+}
+
+// ============================================================
+//  STORY LOG
+// ============================================================
+function addStoryBubble(player, text) {
+  const log = document.getElementById('story-log');
+  const div = document.createElement('div');
+  div.className = `story-bubble${player.role === 'ai' ? ' ai-turn' : ''}`;
+  div.innerHTML = `
+    <div class="speaker-tag">${player.avatar} ${player.name}</div>
+    <div class="story-text">${escapeHtml(text)}</div>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ユーザー入力の漢字をひらがなに変換（クリエイターモード以外で適用）
+async function toHiragana(text) {
+  // クリエイターモードは漢字OK・変換不要
+  if (state.ageMode === 'creator') return text;
+  // 漢字が含まれていなければそのまま返す
+  if (!/[一-龯]/.test(text)) return text;
+  // Anthropic APIがなければそのまま返す
+  if (!state.keys.anthropic) return text;
+  try {
+    const result = await callAnthropic([{
+      role: 'user',
+      content: `以下の文の漢字をすべてひらがなに変換してください。文の意味・内容はそのまま保ってください。ひらがなに変換した文のみを返してください（説明不要）。
+文:「${text}」`
+    }], 'ひらがなに変換した文のみ出力する。', 150);
+    // 結果が元テキストと極端に違う場合は元テキストを返す
+    return result.trim() || text;
+  } catch(e) {
+    return text;
+  }
+}
+
+
+
+// ============================================================
+//  CONTINUE / FINISH
+// ============================================================
+function finishStory() {
+  document.getElementById('continue-popup').classList.add('hidden');
+  launchFinale();
+}
+
+function continueStory() {
+  document.getElementById('continue-popup').classList.add('hidden');
+  state.maxTurns += 5;
+  buildTurnDots();
+  updateTurnDots();
+  // Re-render dots for new total
+  const container = document.getElementById('turn-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'turn-dot' + (i < state.totalTurns ? ' done' : i === state.totalTurns ? ' current' : '');
+    dot.id = `dot-${i}`;
+    container.appendChild(dot);
+  }
+  document.getElementById('turn-label').textContent = `${state.totalTurns + 1} / ${state.maxTurns}`;
+  advancePlayer();
+  updateCurrentPlayerBadge();
+  showToast('もうすこしつづけよう！ ✨');
+}
+
+// ============================================================
+//  FINALE
+// ============================================================
+async function launchFinale() {
+  if (bgGenTotal > 0 && bgGenCompleted < bgGenTotal) {
+    // 待機画面を表示しながら生成完了を待つ
+    showScreen('waiting');
+    buildWaitingIcons();
+    // タイムアウトなし：全画像完了 or ユーザーがスキップするまで待つ
+    await new Promise(resolve => {
+      window._finaleResolve = resolve;
+      // 完了チェックをポーリング
+      const checkInterval = setInterval(() => {
+        updateWaitingProgress();
+        if (bgGenCompleted >= bgGenTotal) {
+          clearInterval(checkInterval);
+          window._finaleResolve = null;
+          resolve();
+        }
+      }, 400);
+      window._finaleCheckInterval = checkInterval;
+    });
+  }
+  shootConfetti();
+  buildFinaleDots();
+  buildSceneGrid();
+  gotoSlide(0);
+  // 全シーンを見るボタンを表示
+  document.getElementById('btn-show-grid').style.display = '';
+  showScreen('finale');
+}
+
+// リアルタイムの状況説明を更新
+function updateWaitingStatus(type, extra) {
+  const el = document.getElementById('waiting-status-text');
+  if (!el) return;
+  const msgs = {
+    generating: () => `第 ${extra.current} 枚目を生成中です…<br><span style="font-size:0.78rem;color:rgba(255,255,255,0.7);font-weight:400;">（全 ${extra.total} 枚）</span>`,
+    waiting_rate: () => `⏳ OpenAIのレート制限（1分5枚）に達したため<br>あと約 <span style="color:#FFD93D;">${extra.sec} 秒</span> 待機しています`,
+    safety_cooldown: () => `🛡 ストーリー内の言葉がOpenAIの安全システムに引っかかりました。<br><span style="color:#FFD93D;">約 ${extra.sec} 秒</span> 後に再開します`,
+    error_network: () => `⚠️ 通信エラーが発生しました（${extra.msg}）<br>次の枚数の生成を試みています…`,
+    error_auth:    () => `🔑 APIキーが無効または残高不足です<br>OpenAIのダッシュボードをご確認ください`,
+    done:          () => `✅ 全部の絵ができました！`,
+    partial_done:  () => `第 ${extra.done} 枚完了 / ${extra.total} 枚中<br><span style="font-size:0.78rem;color:rgba(255,255,255,0.7);">残りを生成中…</span>`,
+  };
+  el.innerHTML = msgs[type] ? msgs[type]() : extra?.msg || '';
+}
+
+function skipWaiting() {
+  // ポーリングを停止してフィナーレへ強制進行
+  if (window._finaleCheckInterval) {
+    clearInterval(window._finaleCheckInterval);
+    window._finaleCheckInterval = null;
+  }
+  if (window._finaleResolve) {
+    window._finaleResolve();
+    window._finaleResolve = null;
+  }
+}
+
+function buildWaitingIcons() {
+  const container = document.getElementById('waiting-icons');
+  container.innerHTML = '';
+  state.turns.forEach((_, i) => {
+    const div = document.createElement('div');
+    div.className = 'waiting-icon';
+    div.id = 'wicon-' + i;
+    div.textContent = '🎨';
+    container.appendChild(div);
+  });
+  updateWaitingProgress();
+}
+
+function updateWaitingProgress() {
+  const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+  const fill = document.getElementById('waiting-progress-fill');
+  const label = document.getElementById('waiting-label');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = bgGenCompleted + ' / ' + bgGenTotal + ' まいできた！';
+  // 完了したアイコンを更新
+  state.turns.forEach((t, i) => {
+    const icon = document.getElementById('wicon-' + i);
+    if (icon && t.imageUrl) icon.classList.add('done'), icon.textContent = '✅';
+  });
+}
+
+function buildSceneGrid() {
+  const grid = document.getElementById('scene-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  state.turns.forEach((turn, i) => {
+    const item = document.createElement('div');
+    item.className = 'scene-grid-item';
+    item.onclick = () => { showSlideshow(); gotoSlide(i); };
+    const shortText = turn.text.length > 30 ? turn.text.substring(0, 30) + '…' : turn.text;
+    item.innerHTML = '<span class="grid-num">' + (i + 1) + '</span>' +
+      (turn.imageUrl
+        ? '<img src="' + turn.imageUrl + '" alt="シーン' + (i+1) + '">'
+        : '<div class="grid-no-img">🎭</div>') +
+      '<div class="grid-text">' + shortText + '</div>';
+    grid.appendChild(item);
+  });
+}
+
+function showGridView() {
+  document.getElementById('grid-view').classList.add('visible');
+  document.getElementById('finale-normal-btns').style.display = 'none';
+  document.querySelector('.finale-frame').style.display = 'none';
+  document.querySelector('.slide-nav').style.display = 'none';
+  document.getElementById('finale-dots').style.display = 'none';
+  document.querySelector('.finale-controls').style.display = 'none';
+}
+
+function showSlideshow() {
+  document.getElementById('grid-view').classList.remove('visible');
+  document.getElementById('finale-normal-btns').style.display = '';
+  document.querySelector('.finale-frame').style.display = '';
+  document.querySelector('.slide-nav').style.display = '';
+  document.getElementById('finale-dots').style.display = '';
+  document.querySelector('.finale-controls').style.display = '';
+}
+
+function buildFinaleDots() {
+  const container = document.getElementById('finale-dots');
+  container.innerHTML = '';
+  state.turns.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'finale-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => gotoSlide(i);
+    container.appendChild(dot);
+  });
+  document.getElementById('slide-counter').textContent = `1 / ${state.turns.length}`;
+}
+
+function gotoSlide(idx) {
+  if (idx < 0 || idx >= state.turns.length) return;
+  currentSlide = idx;
+  const turn = state.turns[idx];
+
+  const img = document.getElementById('finale-image');
+  if (turn.imageUrl) {
+    img.src = turn.imageUrl;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+
+  document.getElementById('finale-story-text').textContent = turn.text;
+  document.getElementById('slide-counter').textContent = `${idx + 1} / ${state.turns.length}`;
+
+  document.querySelectorAll('.finale-dot').forEach((d, i) => {
+    d.classList.toggle('active', i === idx);
+  });
+}
+
+// ============================================================
+//  PLAYBACK (voice sync)
+// ============================================================
+let playbackIdx = 0;
+// ============================================================
+//  BGM ENGINE (Web Audio API)
+// ============================================================
+let bgmAudioCtx = null;
+let bgmNodes = [];
+let selectedBgmKey = 'wagakki';
+let bgmGainNode = null;
+
+const BGM_TRACKS = {
+  none: null,
+  wagakki: {
+    // 日本風五音音階 (ニ短調ペンタトニック): D E F A Bb
+    label: '🏮 むかし',
+    bpm: 60,
+    notes: [
+      [294,0.4],[330,0.2],[349,0.4],[440,0.4],[466,0.6],
+      [440,0.2],[349,0.4],[294,0.8],[262,0.4],
+      [294,0.2],[349,0.2],[440,0.4],[392,0.2],[349,0.4],[294,0.8],
+    ],
+    waveform: 'triangle',
+    reverb: true,
+  },
+  yururi: {
+    // ハ長調のやさしいメロディ
+    label: '🌸 ほのぼの',
+    bpm: 70,
+    notes: [
+      [262,0.5],[294,0.5],[330,0.5],[349,0.5],
+      [392,0.75],[349,0.25],[330,0.5],[294,0.5],
+      [262,0.5],[330,0.5],[294,0.75],[262,0.25],
+      [262,1.0],
+    ],
+    waveform: 'sine',
+    reverb: false,
+  },
+  boken: {
+    // 活発な冒険テーマ (ト長調)
+    label: '⚡ ぼうけん',
+    bpm: 96,
+    notes: [
+      [392,0.25],[392,0.25],[523,0.5],[494,0.25],[466,0.25],
+      [440,0.5],[392,0.5],[523,0.5],[659,0.5],
+      [587,0.25],[523,0.25],[494,0.25],[466,0.25],[440,1.0],
+    ],
+    waveform: 'square',
+    reverb: false,
+  },
+  hoshi: {
+    // 不思議な浮遊感 (全音音階)
+    label: '✨ ふしぎ',
+    bpm: 52,
+    notes: [
+      [261,0.6],[293,0.4],[329,0.6],[370,0.4],
+      [415,0.8],[370,0.4],[329,0.6],[293,0.4],
+      [261,0.6],[329,0.4],[415,0.8],[370,0.8],
+      [261,1.2],
+    ],
+    waveform: 'sine',
+    reverb: true,
+  },
+};
+
+function selectBgm(key) {
+  selectedBgmKey = key;
+  document.querySelectorAll('.bgm-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('bgm-' + key)?.classList.add('selected');
+}
+
+function startBgm() {
+  stopBgm();
+  const track = BGM_TRACKS[selectedBgmKey];
+  if (!track) return;
+
+  bgmAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  bgmGainNode = bgmAudioCtx.createGain();
+  bgmGainNode.gain.value = 0.18; // 控えめな音量
+
+  // リバーブ（コンボリューション風の簡易版）
+  let dest = bgmGainNode;
+  if (track.reverb) {
+    const delay = bgmAudioCtx.createDelay(0.5);
+    const feedback = bgmAudioCtx.createGain();
+    delay.delayTime.value = 0.25;
+    feedback.gain.value = 0.3;
+    bgmGainNode.connect(delay);
+    delay.connect(feedback);
+    feedback.connect(delay);
+    delay.connect(bgmAudioCtx.destination);
+  }
+  bgmGainNode.connect(bgmAudioCtx.destination);
+
+  // ノートをスケジュール（ループ）
+  const secPerBeat = 60 / track.bpm;
+  let loopDur = 0;
+  track.notes.forEach(n => loopDur += n[1] * secPerBeat);
+
+  function scheduleLoop(startTime) {
+    let t = startTime;
+    track.notes.forEach(([freq, dur]) => {
+      const osc = bgmAudioCtx.createOscillator();
+      const gain = bgmAudioCtx.createGain();
+      osc.type = track.waveform;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.8, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + dur * secPerBeat * 0.9);
+      osc.connect(gain);
+      gain.connect(bgmGainNode);
+      osc.start(t);
+      osc.stop(t + dur * secPerBeat);
+      bgmNodes.push(osc);
+      t += dur * secPerBeat;
+    });
+    // 次のループをスケジュール
+    const loopTimeout = setTimeout(() => {
+      if (bgmAudioCtx) scheduleLoop(bgmAudioCtx.currentTime + 0.05);
+    }, (loopDur - 0.5) * 1000);
+    bgmNodes.push({ stop: () => clearTimeout(loopTimeout) });
+  }
+
+  scheduleLoop(bgmAudioCtx.currentTime + 0.1);
+}
+
+function stopBgm() {
+  bgmNodes.forEach(n => { try { n.stop(); } catch(e) {} });
+  bgmNodes = [];
+  if (bgmAudioCtx) {
+    bgmAudioCtx.close();
+    bgmAudioCtx = null;
+  }
+}
+
+function fadeBgm() {
+  if (!bgmGainNode || !bgmAudioCtx) return;
+  const gain = bgmGainNode.gain;
+  gain.setValueAtTime(gain.value, bgmAudioCtx.currentTime);
+  gain.linearRampToValueAtTime(0, bgmAudioCtx.currentTime + 2.0);
+  setTimeout(() => stopBgm(), 2100);
+}
+
+let isPlaying = false;
+
+async function playbackAll() {
+  if (isPlaying) {
+    isPlaying = false;
+    document.getElementById('btn-playback').textContent = '▶️ さいせいする！';
+    fadeBgm();
+    return;
+  }
+  isPlaying = true;
+  playbackIdx = 0;
+  document.getElementById('btn-playback').innerHTML = '⏹ とめる';
+  startBgm();
+  await playSlide(0);
+}
+
+async function playSlide(idx) {
+  if (!isPlaying || idx >= state.turns.length) {
+    isPlaying = false;
+    document.getElementById('btn-playback').innerHTML = '▶️ さいせいする！';
+    document.getElementById('audio-playing-badge').classList.add('hidden');
+    fadeBgm(); // 再生終了でBGMをフェードアウト
+    // 全再生終了 → 「ぜんぶのえをみる」ボタンをアニメーションで強調
+    const gridBtn = document.getElementById('btn-show-grid');
+    if (gridBtn) {
+      gridBtn.style.animation = 'bounce 1s ease-in-out 3';
+      gridBtn.style.background = 'linear-gradient(135deg, var(--yellow), var(--orange))';
+      gridBtn.style.color = 'white';
+      gridBtn.style.borderColor = 'transparent';
+    }
+    return;
+  }
+
+  gotoSlide(idx);
+  const turn = state.turns[idx];
+
+  if (turn.audioUrl) {
+    document.getElementById('audio-playing-badge').classList.remove('hidden');
+    const audio = new Audio(turn.audioUrl);
+    await new Promise(resolve => {
+      audio.onended = resolve;
+      audio.onerror = resolve;
+      audio.play().catch(resolve);
+    });
+    document.getElementById('audio-playing-badge').classList.add('hidden');
+  } else if (turn.text && state.keys.google) {
+    // Google TTS fallback
+    try {
+      await playGoogleTTS(turn.text);
+    } catch(e) {}
+  } else {
+    // Pause between slides
+    await sleep(2000);
+  }
+
+  if (isPlaying) {
+    await sleep(300);
+    await playSlide(idx + 1);
+  }
+}
+
+// ============================================================
+//  SPEAK TEXT (ゲーム中のAI音声読み上げ)
+// ============================================================
+async function speakText(text) {
+  if (state.keys.google) {
+    // Google TTS優先
+    try {
+      await playGoogleTTS(text);
+      return;
+    } catch(e) {
+      console.warn('Google TTS error:', e);
+    }
+  }
+  // フォールバック: Web Speech API (ブラウザ内蔵)
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'ja-JP';
+    utter.rate = 0.85;
+    utter.pitch = 1.1;
+    // ja-JP の声があれば使う
+    const voices = window.speechSynthesis.getVoices();
+    const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+    if (jaVoice) utter.voice = jaVoice;
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+async function playGoogleTTS(text) {
+  const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${state.keys.google}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      input: { text },
+      voice: { languageCode: 'ja-JP', name: 'ja-JP-Wavenet-B', ssmlGender: 'NEUTRAL' },
+      audioConfig: { audioEncoding: 'MP3', speakingRate: 0.85 },
+    }),
+  });
+  if (!res.ok) return;
+  const data = await res.json();
+  const audio = new Audio(`data:audio/mp3;base64,${data.audioContent}`);
+  document.getElementById('audio-playing-badge').classList.remove('hidden');
+  await new Promise(resolve => {
+    audio.onended = resolve;
+    audio.onerror = resolve;
+    audio.play().catch(resolve);
+  });
+  document.getElementById('audio-playing-badge').classList.add('hidden');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================================
+//  ANTHROPIC API
+// ============================================================
+async function callAnthropic(messages, systemPrompt, maxTokens = 500) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.keys.anthropic,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages,
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.content[0].text;
+}
+
+// ============================================================
+//  RESET
+// ============================================================
+function resetGame() {
+  isPlaying = false;
+  stopBgm();
+  state.turns = [];
+  state.totalTurns = 0;
+  state.currentPlayerIdx = 0;
+  state.recognizedText = '';
+  state.pendingAudioBlob = null;
+  state.filteredTurnIndices = [];
+  state.lastInputWasFiltered = false;
+  document.getElementById('story-log').innerHTML = '';
+  // scene-image/placeholder removed from game screen
+  const _tar = document.getElementById('recognized-text'); if(_tar){_tar.value='';_tar.placeholder='ここにことばがでるよ 👆';_tar.readOnly=true;}
+  document.getElementById('btn-send').disabled = true;
+  showScreen('title');
+}
+
+// ============================================================
+//  TOAST
+// ============================================================
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ============================================================
+//  CONFETTI
+// ============================================================
+function shootConfetti() {
+  const colors = ['#FF6B9D','#FFD93D','#6BCB77','#4ECDC4','#A78BFA','#FF9F43','#FF6B6B'];
+  const wrapper = document.getElementById('confetti-wrapper');
+  wrapper.innerHTML = '';
+  for (let i = 0; i < 80; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left:${Math.random() * 100}%;
+      background:${colors[Math.floor(Math.random() * colors.length)]};
+      animation-duration:${1.5 + Math.random() * 2}s;
+      animation-delay:${Math.random() * 0.8}s;
+      transform:rotate(${Math.random() * 360}deg);
+      width:${6 + Math.random() * 10}px;
+      height:${6 + Math.random() * 10}px;
+      border-radius:${Math.random() > 0.5 ? '50%' : '3px'};
+    `;
+    wrapper.appendChild(el);
+  }
+  setTimeout(() => wrapper.innerHTML = '', 4000);
+}
+// ============================================================
+//  AUTO-LOAD SAVED API KEYS
+// ============================================================
+(function() {
+  try {
+    const saved = localStorage.getItem('ehon_keys');
+    if (!saved) return;
+    const keys = JSON.parse(saved);
+    const fill = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    fill('api-anthropic', keys.anthropic);
+    fill('api-openai', keys.openai);
+    fill('api-google', keys.google);
+    const chk = document.getElementById('save-keys-check');
+    if (chk) chk.checked = true;
+    const btn = document.getElementById('btn-clear-keys');
+    if (btn) btn.style.display = 'block';
+  } catch(e) {}
+})();
+</script>
+</body>
+</html>
