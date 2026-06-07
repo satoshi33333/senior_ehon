@@ -1363,7 +1363,12 @@ JSONのみ出力（説明不要）。`;
 
       // 不足情報があれば問いに自然に組み込む
       if (info.missing && info.missing.length > 0) {
-        const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+        // モードに応じてeraの聞き方を変える
+        const eraLabel = (state.appMode === 'mirai')
+          ? 'いつ頃のこと（5年後・10年後・老後など）'
+          : (state.appMode === 'moshimo') ? 'いつ頃のifか'
+          : 'いつ頃';
+        const missingLabels = { era: eraLabel, place: 'どんな場所', characters: '誰と' };
         const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
         const infoPrompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
 
@@ -1518,9 +1523,9 @@ let waveAnimId = null;
 
 let _mediaRecorder = null;
 let _audioChunks = [];
-let _pendingAudioBlob = null; // 録音完了後のBlob（submitTurn前に一時保存）
-
-let _micStream = null; // マイクストリームを保持
+let _pendingAudioBlob = null;
+let _micStream = null;
+let _whisperTranscribing = false;
 
 function startRecord() {
   if (state.isRecording) return;
@@ -1534,58 +1539,65 @@ function startRecord() {
   document.getElementById('record-btn').classList.add('recording');
   document.getElementById('waveform').classList.add('active');
 
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    showToast('音声認識はChromeで使えます。文字入力をお使いください。');
-    stopRecord();
-    return;
-  }
-
-  // getUserMediaでストリームを取得し、MediaRecorderとSpeechRecognitionを同時起動
   navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
     if (!state.isRecording) { stream.getTracks().forEach(t => t.stop()); return; }
     _micStream = stream;
 
-    // MediaRecorderで録音（じぶんの声再生用）
-    try {
-      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-        ? 'audio/webm;codecs=opus'
-        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-      _mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-      _mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) _audioChunks.push(e.data); };
-      _mediaRecorder.onstop = () => {
-        if (_audioChunks.length > 0) {
-          const mType = _mediaRecorder?.mimeType || 'audio/webm';
-          _pendingAudioBlob = new Blob(_audioChunks, { type: mType });
-        }
-      };
-      _mediaRecorder.start(100); // 100msごとにdataavailableを発火（確実にデータを取得）
-    } catch(e) {
-      console.warn('MediaRecorder init failed:', e);
-    }
+    // MIMEタイプを明示的に選択
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
+      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
 
-    // SpeechRecognitionはブラウザ内蔵（別途マイクを使う）
-    recogRef = new SR();
-    recogRef.lang = 'ja-JP';
-    recogRef.continuous = true;
-    recogRef.interimResults = true;
-    recogRef.onresult = (e) => {
-      let text = '';
-      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
-      state.recognizedText = text;
-      document.getElementById('recognized-ta').value = text;
-      document.getElementById('btn-send').disabled = !text.trim();
+    _mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+
+    _mediaRecorder.ondataavailable = e => {
+      if (e.data && e.data.size > 0) _audioChunks.push(e.data);
     };
-    recogRef.onerror = (e) => {
-      console.warn('SR error:', e.error);
-      if (e.error === 'not-allowed') {
-        showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
-      } else if (e.error === 'audio-capture') {
-        showToast('マイクが見つかりません。文字入力をお使いください。');
+    _mediaRecorder.onstop = async () => {
+      // streamを止める
+      stream.getTracks().forEach(t => t.stop());
+      _micStream = null;
+
+      if (_audioChunks.length === 0) return;
+      const mType = _mediaRecorder.mimeType || mimeType || 'audio/webm';
+      const blob = new Blob(_audioChunks, { type: mType });
+      _pendingAudioBlob = blob; // 再生用に保存
+
+      // OpenAIキーがあればWhisperで文字起こし
+      if (state.keys.openai) {
+        _whisperTranscribing = true;
+        document.getElementById('recognized-ta').placeholder = '文字起こし中…';
+        try {
+          const ext = mType.includes('mp4') ? 'mp4' : 'webm';
+          const fd = new FormData();
+          fd.append('file', blob, 'audio.' + ext);
+          fd.append('model', 'whisper-1');
+          fd.append('language', 'ja');
+          const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + state.keys.openai },
+            body: fd,
+          });
+          const data = await res.json();
+          if (data.text) {
+            state.recognizedText = data.text;
+            document.getElementById('recognized-ta').value = data.text;
+            document.getElementById('recognized-ta').placeholder = '';
+            document.getElementById('btn-send').disabled = false;
+          } else {
+            document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。もう一度お試しください。';
+          }
+        } catch(e) {
+          console.warn('Whisper error:', e);
+          document.getElementById('recognized-ta').placeholder = '文字起こしに失敗しました。文字入力をお使いください。';
+        }
+        _whisperTranscribing = false;
       }
-      stopRecord();
     };
-    recogRef.start();
+    _mediaRecorder.start(100);
     animateWave();
 
   }).catch(() => {
@@ -1605,26 +1617,18 @@ function animateWave() {
 function stopRecord() {
   if (!state.isRecording) return;
   state.isRecording = false;
+  // recogRefは使わない（Whisper方式に変更）
   if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
+  // MediaRecorderを停止 → onstopでWhisper文字起こしが走る
   if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
     try { _mediaRecorder.stop(); } catch(e) {}
-  }
-  // MediaRecorderのonstopが呼ばれた後にstreamを止める
-  setTimeout(() => {
-    if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
     _mediaRecorder = null;
-  }, 300);
+  }
   if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
   document.getElementById('record-btn').classList.remove('recording');
   document.getElementById('waveform').classList.remove('active');
   for (let i = 0; i < 5; i++) document.getElementById('wb' + i).style.height = '4px';
-
-  if (state.recognizedText.trim()) {
-    document.getElementById('recognized-ta').placeholder = '';
-    document.getElementById('btn-send').disabled = false;
-  } else {
-    document.getElementById('recognized-ta').placeholder = 'もう一度お試しください';
-  }
+  // 文字起こし中はplaceholderで表示（onstopのWhisper処理で更新される）
 }
 
 function onTextEdit(val) {
@@ -1704,15 +1708,7 @@ async function submitTurn() {
   const player = state.players[state.currentPlayerIdx];
   addStoryBubble(player, confirmedText, false);
 
-  // 音声BlobはMediaRecorderのonstopを待ってから取得（最大1秒）
-  await new Promise(resolve => {
-    const deadline = Date.now() + 1000;
-    const check = () => {
-      if (_pendingAudioBlob || Date.now() >= deadline) resolve();
-      else setTimeout(check, 50);
-    };
-    setTimeout(check, 100); // 最低100ms待つ
-  });
+  // _pendingAudioBlobはMediaRecorderのonstopで設定済み
   const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null, audioBlob: _pendingAudioBlob || null };
   _pendingAudioBlob = null;
   state.turns.push(turnData);
@@ -1900,7 +1896,7 @@ async function processImageQueue() {
     }
     bgGenCompleted++;
     updateGenProgress();
-    if (imageGenQueue.length > 0) await sleep(3500);
+    if (imageGenQueue.length > 0) await sleep(6000); // レート制限対策：6秒待つ
   }
   imageGenRunning = false;
   if (bgGenCompleted >= bgGenTotal) {
@@ -1920,63 +1916,14 @@ function updateGenProgress() {
 
 async function generateImage(text, turnIdx) {
   const storyContext = state.turns.slice(0, turnIdx + 1).map(t => t.text).join(' ');
-  const narratorGender = state.gender === 'male' ? '男の子' : '女の子';
-  const narratorGenderTeen = state.gender === 'male' ? '男子中学生・高校生' : '女子中学生・高校生';
-  const narratorAdult = state.gender === 'male' ? '老年の男性（語り手の現在の姿・不要なら描かない）' : '老年の女性（語り手の現在の姿・不要なら描かない）';
+  const genderStr = state.gender === 'male' ? '男性' : '女性';
+  const ageStr = state.age + '歳';
 
-  // テキストから年齢・年代を推定
-  const ageHint = (() => {
-    if (/幼稚園|保育園|幼い|小さい頃|3歳|4歳|5歳/.test(text)) return '幼児（4〜6歳）';
-    if (/小学|低学年|1年|2年|3年生/.test(text)) return '小学生低学年（7〜9歳）';
-    if (/小学|高学年|4年|5年|6年生/.test(text)) return '小学生高学年（10〜12歳）';
-    if (/中学|13歳|14歳|15歳/.test(text)) return '中学生（13〜15歳）';
-    if (/高校|16歳|17歳|18歳/.test(text)) return '高校生（16〜18歳）';
-    if (/大学|20歳|成人|社会人|就職|仕事/.test(text)) return '青年（20代）';
-    return null;
-  })();
-
-  // 語り手の年齢から各時代の年を動的に計算
-  const currentYear = 2026;
-  const birthYear = currentYear - state.age;
-  const eraHint = (() => {
-    const calcYear = (age) => birthYear + age;
-    const toWareki = (y) => {
-      if (y >= 1989) return `平成${y - 1988}年（${y}年）頃`;
-      if (y >= 1926) return `昭和${y - 1925}年（${y}年）頃`;
-      return `${y}年頃`;
-    };
-    if (/幼稚園|保育園|幼い|小さい頃/.test(text)) {
-      const y = calcYear(5);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    if (/小学/.test(text)) {
-      const y = calcYear(9);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    if (/中学/.test(text)) {
-      const y = calcYear(14);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    if (/高校/.test(text)) {
-      const y = calcYear(17);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    if (/大学/.test(text)) {
-      const y = calcYear(20);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    if (/就職|社会人|仕事/.test(text)) {
-      const y = calcYear(23);
-      return `${toWareki(y)}の日本の風景・服装・生活用品`;
-    }
-    // 時代が不明な場合はおおよその範囲
-    const y1 = calcYear(6); const y2 = calcYear(22);
-    return `${toWareki(y1)}〜${toWareki(y2)}頃の日本の風景・服装・生活用品`;
-  })();
-
-  const ageDesc = ageHint
-    ? `語り手はこの場面では${ageHint}の${narratorGender}として描く`
-    : `語り手はこの場面に応じた年齢の${narratorGender}または${narratorGenderTeen}として描く（現在の老年の姿は不要）`;
+  // モードに応じてキャラクター設定・スタイルを変える
+  const isMemoryMode = state.appMode === 'ehon' || state.appMode === 'anokoro';
+  const isFutureMode = state.appMode === 'mirai';
+  const isIfMode = state.appMode === 'moshimo';
+  const isGratitudeMode = state.appMode === 'kansha';
 
   // storyContextから追加情報を組み立て
   const ctxLines = [];
@@ -1984,37 +1931,123 @@ async function generateImage(text, turnIdx) {
   if (state.storyContext.place) ctxLines.push(`- 場所・地域：${state.storyContext.place}`);
   if (state.storyContext.characters) ctxLines.push(`- 主な登場人物：${state.storyContext.characters}`);
   const ctxBlock = ctxLines.length > 0
-    ? `
-【収集済み背景情報（全ての絵に一貫して反映すること）】
-${ctxLines.join('\n')}
-`
+    ? `\n【収集済み背景情報（全ての絵に一貫して反映すること）】\n${ctxLines.join('\n')}\n`
     : '';
 
-  const prompt = `昭和時代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調。
+  let prompt = '';
 
-【時代設定】
-${eraHint}の日本の風景・服装・生活用品を忠実に再現する
+  if (isMemoryMode) {
+    // 思い出絵本・あのころ話：子供〜青年時代の場面
+    const narratorGender = state.gender === 'male' ? '男の子' : '女の子';
+    const narratorGenderTeen = state.gender === 'male' ? '男子中学生・高校生' : '女子中学生・高校生';
+    const ageHint = (() => {
+      if (/幼稚園|保育園|幼い|小さい頃|3歳|4歳|5歳/.test(text)) return '幼児（4〜6歳）';
+      if (/小学|低学年|1年|2年|3年生/.test(text)) return '小学生低学年（7〜9歳）';
+      if (/小学|高学年|4年|5年|6年生/.test(text)) return '小学生高学年（10〜12歳）';
+      if (/中学|13歳|14歳|15歳/.test(text)) return '中学生（13〜15歳）';
+      if (/高校|16歳|17歳|18歳/.test(text)) return '高校生（16〜18歳）';
+      if (/大学|20歳|成人|社会人|就職|仕事/.test(text)) return '青年（20代）';
+      return null;
+    })();
+    const currentYear = 2026;
+    const birthYear = currentYear - state.age;
+    const toWareki = (y) => {
+      if (y >= 1989) return `平成${y - 1988}年（${y}年）頃`;
+      if (y >= 1926) return `昭和${y - 1925}年（${y}年）頃`;
+      return `${y}年頃`;
+    };
+    const eraHint = (() => {
+      if (/幼稚園|保育園|幼い|小さい頃/.test(text)) return `${toWareki(birthYear+5)}の日本`;
+      if (/小学/.test(text)) return `${toWareki(birthYear+9)}の日本`;
+      if (/中学/.test(text)) return `${toWareki(birthYear+14)}の日本`;
+      if (/高校/.test(text)) return `${toWareki(birthYear+17)}の日本`;
+      if (/大学/.test(text)) return `${toWareki(birthYear+20)}の日本`;
+      if (/就職|社会人|仕事/.test(text)) return `${toWareki(birthYear+23)}の日本`;
+      return `${toWareki(birthYear+6)}〜${toWareki(birthYear+22)}頃の日本`;
+    })();
+    const ageDesc = ageHint
+      ? `語り手はこの場面では${ageHint}の${narratorGender}として描く`
+      : `語り手はこの場面に応じた年齢の${narratorGender}または${narratorGenderTeen}として描く`;
+    prompt = `日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調。
+
+【時代設定】${eraHint}の風景・服装・生活用品を忠実に再現する
 ${ctxBlock}
-【キャラクター設定（必ず一貫して守ること）】
+【キャラクター設定】
 - 語り手: ${ageDesc}、黒髪
-- ${narratorAdult}
-- お母さん: 40〜50代の日本人女性、黒髪をまとめている、和やかな表情
-- おばあさん: 70代の日本人女性、白髪、穏やかな笑顔
-- お父さん: 40〜50代の日本人男性、昭和のサラリーマン風
+- お母さん: 40〜50代の日本人女性、黒髪をまとめている
+- おばあさん: 70代の日本人女性、白髪
+- お父さん: 40〜50代の日本人男性
 
-【重要】語り手の現在の老年の姿は、この場面に必要でなければ描かない。子供・青年時代の場面なら子供・青年だけで構成する。
+【重要】子供・青年時代の場面なら子供・青年だけで構成する。老年の姿は不要。
 
-【この場面のテキスト】
-「${text}」
+【テキスト】「${text}」
+【文脈】「${storyContext.substring(0, 100)}」
+【構図】横長4:3、絵本の1ページ。温かく郷愁を感じる情景。
+絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。`;
 
-【これまでの文脈】
-「${storyContext.substring(0, 150)}」
+  } else if (isFutureMode) {
+    // 未来話：現在〜未来の明るい情景
+    const narratorDesc = state.gender === 'male'
+      ? `${ageStr}の日本人男性（穏やかな表情）`
+      : `${ageStr}の日本人女性（穏やかな表情）`;
 
-【構図の指示】
-- 横長4:3、絵本の1ページ
-- テキストの内容に登場する人物・場面だけを描く
-- 温かく郷愁を感じる情景
-- 絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
+    // storyContext.eraから未来の時期を推定
+    const futureEra = (() => {
+      const era = state.storyContext.era;
+      if (!era) return '現代〜近い将来の日本（2026年〜2040年頃）';
+      // 「10年後」「5年後」「老後」「孫が生まれたら」などを解釈
+      if (/10年後|じゅうねんご/.test(era)) return '2036年頃の日本';
+      if (/5年後|ごねんご/.test(era)) return '2031年頃の日本';
+      if (/20年後|にじゅうねんご/.test(era)) return '2046年頃の日本';
+      if (/老後|引退|リタイア/.test(era)) return '近い将来の日本（語り手が引退後）';
+      if (/孫|まご/.test(era)) return '近い将来の日本（孫が生まれた頃）';
+      // そのままeraの内容を使う
+      return `${era}の日本`;
+    })();
+
+    prompt = `明るく温かい日本の水彩絵本スタイル。希望と喜びにあふれた柔らかい色調。
+
+【時代設定】${futureEra}。明るく希望に満ちた情景。
+${ctxBlock}
+【主人公】${narratorDesc}が登場する場合は現在の年齢（子供ではなく大人・シニア）で描く。子供の姿は不要。
+
+【テキスト】「${text}」
+【文脈】「${storyContext.substring(0, 100)}」
+【構図】横長4:3、絵本の1ページ。明るく希望に満ちた情景。
+絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。`;
+
+  } else if (isIfMode) {
+    // もしも話：現在の語り手が空想する場面
+    const narratorDesc = state.gender === 'male'
+      ? `${ageStr}の日本人男性`
+      : `${ageStr}の日本人女性`;
+    prompt = `温かみのある日本の水彩絵本スタイル。柔らかい色調、少し夢想的な雰囲気。
+
+【設定】「もしあの時〜だったら」という空想の場面。
+${ctxBlock}
+【主人公】${narratorDesc}。語り手が登場する場合は現在の年齢で描く。子供の姿は不要。
+
+【テキスト】「${text}」
+【文脈】「${storyContext.substring(0, 100)}」
+【構図】横長4:3、絵本の1ページ。温かく夢想的な情景。
+絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。`;
+
+  } else {
+    // 感謝話：感謝する相手との温かいシーン
+    const narratorDesc = state.gender === 'male'
+      ? `${ageStr}の日本人男性`
+      : `${ageStr}の日本人女性`;
+    prompt = `温かく感動的な日本の水彩絵本スタイル。深みのある柔らかい色調。
+
+【設定】感謝と思い出が交差する温かいシーン。
+${ctxBlock}
+【主人公】${narratorDesc}と感謝する相手（テキストに登場する人物）。
+
+【テキスト】「${text}」
+【文脈】「${storyContext.substring(0, 100)}」
+【構図】横長4:3、絵本の1ページ。温かく感動的な情景。
+絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。`;
+  }
 
   const res = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
@@ -2869,9 +2902,14 @@ async function yaAITurn() {
         if (info.place) state.storyContext.place = info.place;
         if (info.characters) state.storyContext.characters = info.characters;
         if (info.missing && info.missing.length > 0) {
-          const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+          // モードに応じてeraの聞き方を変える
+          const eraLabel = (ya.mode === 'mirai')
+            ? 'いつ頃のこと（5年後・10年後・老後など）'
+            : (ya.mode === 'moshimo') ? 'いつ頃のifか'
+            : 'いつ頃';
+          const missingLabels = { era: eraLabel, place: 'どんな場所', characters: '誰と' };
           const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
-          const infoPrompt = cfg.aiPrompt(ya.topic, log) + '\n\nさらに返答の最後に「' + hints + 'のお話でしたか？」という確認を自然な流れで1文だけ付け加えてください。';
+          const infoPrompt = cfg.aiPrompt(ya.topic, log) + '\n\nさらに返答の最後に「' + hints + 'のことですか？」という確認を自然な流れで1文だけ付け加えてください。';
           ya.skipNextTurnImage = true; // 情報収集ターンは絵不要
           reply = await callAnthropic(infoPrompt, 150);
         }
