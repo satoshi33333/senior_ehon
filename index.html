@@ -1520,6 +1520,8 @@ let _mediaRecorder = null;
 let _audioChunks = [];
 let _pendingAudioBlob = null; // 録音完了後のBlob（submitTurn前に一時保存）
 
+let _micStream = null; // マイクストリームを保持
+
 function startRecord() {
   if (state.isRecording) return;
   state.isRecording = true;
@@ -1532,19 +1534,6 @@ function startRecord() {
   document.getElementById('record-btn').classList.add('recording');
   document.getElementById('waveform').classList.add('active');
 
-  // MediaRecorderで音声も録音（テキスト認識と並行）
-  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-    _mediaRecorder = new MediaRecorder(stream);
-    _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
-    _mediaRecorder.onstop = () => {
-      _pendingAudioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
-      stream.getTracks().forEach(t => t.stop());
-    };
-    _mediaRecorder.start();
-  }).catch(() => {
-    // マイク取得失敗は無視（テキスト認識のみ続行）
-  });
-
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
     showToast('音声認識はChromeで使えます。文字入力をお使いください。');
@@ -1552,32 +1541,57 @@ function startRecord() {
     return;
   }
 
-  recogRef = new SR();
-  recogRef.lang = 'ja-JP';
-  recogRef.continuous = true;
-  recogRef.interimResults = true;
+  // getUserMediaでストリームを取得し、MediaRecorderとSpeechRecognitionを同時起動
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    if (!state.isRecording) { stream.getTracks().forEach(t => t.stop()); return; }
+    _micStream = stream;
 
-  recogRef.onresult = (e) => {
-    let text = '';
-    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
-    state.recognizedText = text;
-    document.getElementById('recognized-ta').value = text;
-    document.getElementById('btn-send').disabled = !text.trim();
-  };
-
-  // BUG FIX: onerrorを適切にハンドリング（マイク拒否でUIが固まらないように）
-  recogRef.onerror = (e) => {
-    console.warn('SR error:', e.error);
-    if (e.error === 'not-allowed') {
-      showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
-    } else if (e.error === 'audio-capture') {
-      showToast('マイクが見つかりません。文字入力をお使いください。');
+    // MediaRecorderで録音（じぶんの声再生用）
+    try {
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+        ? 'audio/webm;codecs=opus'
+        : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+      _mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      _mediaRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) _audioChunks.push(e.data); };
+      _mediaRecorder.onstop = () => {
+        if (_audioChunks.length > 0) {
+          const mType = _mediaRecorder?.mimeType || 'audio/webm';
+          _pendingAudioBlob = new Blob(_audioChunks, { type: mType });
+        }
+      };
+      _mediaRecorder.start(100); // 100msごとにdataavailableを発火（確実にデータを取得）
+    } catch(e) {
+      console.warn('MediaRecorder init failed:', e);
     }
-    stopRecord();
-  };
 
-  recogRef.start();
-  animateWave();
+    // SpeechRecognitionはブラウザ内蔵（別途マイクを使う）
+    recogRef = new SR();
+    recogRef.lang = 'ja-JP';
+    recogRef.continuous = true;
+    recogRef.interimResults = true;
+    recogRef.onresult = (e) => {
+      let text = '';
+      for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+      state.recognizedText = text;
+      document.getElementById('recognized-ta').value = text;
+      document.getElementById('btn-send').disabled = !text.trim();
+    };
+    recogRef.onerror = (e) => {
+      console.warn('SR error:', e.error);
+      if (e.error === 'not-allowed') {
+        showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
+      } else if (e.error === 'audio-capture') {
+        showToast('マイクが見つかりません。文字入力をお使いください。');
+      }
+      stopRecord();
+    };
+    recogRef.start();
+    animateWave();
+
+  }).catch(() => {
+    showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
+    stopRecord();
+  });
 }
 
 function animateWave() {
@@ -1594,8 +1608,12 @@ function stopRecord() {
   if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
   if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
     try { _mediaRecorder.stop(); } catch(e) {}
-    _mediaRecorder = null;
   }
+  // MediaRecorderのonstopが呼ばれた後にstreamを止める
+  setTimeout(() => {
+    if (_micStream) { _micStream.getTracks().forEach(t => t.stop()); _micStream = null; }
+    _mediaRecorder = null;
+  }, 300);
   if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
   document.getElementById('record-btn').classList.remove('recording');
   document.getElementById('waveform').classList.remove('active');
@@ -1870,9 +1888,15 @@ async function processImageQueue() {
   while (imageGenQueue.length > 0) {
     const { text, turnIdx } = imageGenQueue.shift();
     try {
-      await generateImage(text, turnIdx);
+      // 1枚あたり最大60秒のタイムアウトを設定（詰まり防止）
+      await Promise.race([
+        generateImage(text, turnIdx),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000))
+      ]);
     } catch(e) {
       console.warn('Image gen failed:', e.message);
+      // エラー・タイムアウト時はプレースホルダー画像を設定
+      if (state.turns[turnIdx]) state.turns[turnIdx].imageUrl = null;
     }
     bgGenCompleted++;
     updateGenProgress();
