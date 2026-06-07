@@ -1,0 +1,2966 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>えほんシニア — 思い出を絵本にする</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;700&family=Shippori+Mincho:wght@400;500;700&display=swap');
+
+:root {
+  --washi:   #faf6ef;
+  --washi2:  #f0e9db;
+  --washi3:  #e4d9c8;
+  --ink:     #2a231a;
+  --ink2:    #5c4f3a;
+  --ink3:    #8a7a64;
+  --red:     #b5392a;
+  --gold:    #c8922a;
+  --sage:    #6b7c5e;
+  --shadow:  rgba(42,35,26,0.15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Noto Serif JP', 'Shippori Mincho', serif;
+  background: var(--washi);
+  min-height: 100vh;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(200,146,42,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(107,124,94,0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ===== タイトル画面 ===== */
+#screen-title {
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  gap: 0;
+}
+
+.title-kamon {
+  width: 80px; height: 80px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 20px;
+  position: relative;
+  animation: slowSpin 20s linear infinite;
+}
+.title-kamon::before {
+  content: '';
+  position: absolute; inset: 4px;
+  border: 1px solid rgba(200,146,42,0.4);
+  border-radius: 50%;
+}
+@keyframes slowSpin { to { transform: rotate(360deg); } }
+
+.title-main {
+  font-family: 'Shippori Mincho', serif;
+  font-size: clamp(2rem, 8vw, 3.2rem);
+  font-weight: 700; color: var(--ink);
+  letter-spacing: 0.15em; text-align: center; line-height: 1.2;
+}
+.title-main span { color: var(--red); }
+.title-sub {
+  font-size: clamp(1rem, 3vw, 1.2rem);
+  color: var(--ink2); letter-spacing: 0.2em;
+  margin-top: 8px; text-align: center;
+}
+
+.title-divider {
+  width: 60px; height: 1px;
+  background: var(--gold); margin: 28px auto;
+  position: relative;
+}
+.title-divider::before, .title-divider::after {
+  content: '◇'; position: absolute; top: -8px;
+  font-size: 10px; color: var(--gold);
+}
+.title-divider::before { left: -14px; }
+.title-divider::after  { right: -14px; }
+
+.key-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.key-label { font-size: 14px; letter-spacing: 0.08em; color: var(--ink2); margin-bottom: 6px; display: block; }
+.key-row { display: flex; gap: 8px; }
+.key-input {
+  flex: 1; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 12px 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  outline: none; border-radius: 4px;
+}
+.key-input:focus { border-color: var(--gold); }
+.key-btn {
+  background: var(--gold); color: white; border: none;
+  padding: 12px 18px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  border-radius: 4px; letter-spacing: 0.06em;
+}
+.key-status { font-size: 14px; margin-top: 6px; color: var(--ink2); }
+.key-status.ok { color: var(--sage); }
+
+.members-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.members-label { font-size: 16px; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 12px; text-align: center; }
+.gender-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.gender-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.age-section { width: 100%; max-width: 420px; margin-bottom: 20px; }
+.age-row { display: flex; align-items: center; gap: 12px; }
+.age-label-text { font-size: 16px; color: var(--ink); letter-spacing: 0.08em; white-space: nowrap; }
+.age-input {
+  width: 90px; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; font-weight: 500;
+  outline: none; border-radius: 4px; text-align: center;
+}
+.age-input:focus { border-color: var(--gold); }
+.age-unit { font-size: 17px; color: var(--ink); letter-spacing: 0.08em; }
+.members-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.member-btn {
+  background: white; border: 1.5px solid var(--washi3);
+  color: var(--ink2); padding: 14px 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  text-align: center; border-radius: 6px; transition: all 0.2s; line-height: 1.5;
+}
+.member-btn:hover { border-color: var(--gold); }
+.member-btn.active { border-color: var(--red); background: rgba(181,57,42,0.05); color: var(--red); }
+.member-num { display: block; font-size: 26px; margin-bottom: 2px; }
+
+.names-section { width: 100%; max-width: 420px; margin-bottom: 24px; }
+.name-inputs { display: flex; flex-direction: column; gap: 8px; }
+.name-row { display: flex; align-items: center; gap: 10px; }
+.name-avatar { font-size: 22px; width: 36px; text-align: center; flex-shrink: 0; }
+.name-field {
+  flex: 1; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 18px;
+  outline: none; border-radius: 4px;
+}
+.name-field:focus { border-color: var(--gold); }
+
+.start-btn {
+  width: 100%; max-width: 420px;
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 22px;
+  letter-spacing: 0.2em; border-radius: 6px; transition: opacity 0.2s;
+}
+.start-btn:hover { opacity: 0.88; }
+
+/* ===== ゲーム画面 ===== */
+.game-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--washi);
+  border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.game-logo { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); letter-spacing: 0.1em; }
+.game-logo span { color: var(--red); }
+
+.turn-progress { display: flex; align-items: center; gap: 6px; }
+.turn-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--washi3); transition: all 0.3s; }
+.turn-dot.done    { background: var(--gold); }
+.turn-dot.current { background: var(--red); transform: scale(1.3); }
+.turn-label { font-size: 14px; color: var(--ink2); letter-spacing: 0.08em; margin-left: 4px; }
+
+.game-body {
+  flex: 1; display: grid;
+  grid-template-columns: 1fr 360px;
+  overflow: hidden;
+  height: calc(100vh - 53px);
+}
+@media (max-width: 680px) {
+  .game-body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+}
+
+.story-panel {
+  padding: 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 16px;
+  border-right: 1px solid var(--washi3);
+}
+.story-panel::-webkit-scrollbar { width: 3px; }
+.story-panel::-webkit-scrollbar-thumb { background: var(--washi3); }
+
+.story-bubble { display: flex; flex-direction: column; gap: 4px; animation: fadeSlide 0.5s ease; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.story-bubble.ai-turn .bubble-text { background: rgba(200,146,42,0.08); border-left: 2px solid var(--gold); }
+.bubble-speaker { font-size: 14px; color: var(--ink2); letter-spacing: 0.1em; display: flex; align-items: center; gap: 5px; }
+.bubble-text { background: white; border-left: 2px solid var(--washi3); padding: 14px 16px; font-size: 17px; line-height: 1.8; color: var(--ink); }
+
+.input-panel { display: flex; flex-direction: column; background: var(--washi); overflow-y: auto; }
+
+.current-speaker { padding: 16px 18px; border-bottom: 1px solid var(--washi3); flex-shrink: 0; }
+.speaker-name { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--ink); letter-spacing: 0.08em; }
+.speaker-hint { font-size: 15px; color: var(--ink2); margin-top: 4px; line-height: 1.6; }
+
+.ai-question-box {
+  margin: 16px 18px;
+  background: rgba(200,146,42,0.07);
+  border: 1px solid rgba(200,146,42,0.25);
+  padding: 14px 16px; border-radius: 4px;
+}
+.ai-question-label { font-size: 13px; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 6px; text-transform: uppercase; }
+.ai-question-text { font-size: 18px; line-height: 1.9; color: var(--ink); }
+.ai-question-refresh {
+  display: flex; justify-content: flex-end; margin-top: 8px;
+}
+.btn-refresh-question {
+  background: transparent; border: 1px solid var(--gold);
+  color: var(--gold); padding: 6px 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  border-radius: 4px; letter-spacing: 0.06em; transition: all 0.15s;
+}
+.btn-refresh-question:hover { background: rgba(200,146,42,0.08); }
+.btn-refresh-question:disabled { opacity: 0.4; cursor: default; }
+
+.ai-thinking { display: flex; align-items: center; gap: 6px; padding: 10px 18px; }
+.thinking-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gold);
+  animation: thinkBounce 1.1s ease-in-out infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.18s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.36s; }
+@keyframes thinkBounce { 0%,80%,100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-5px); opacity: 1; } }
+
+.gen-progress { margin: 0 18px; }
+.gen-bar-track { height: 2px; background: var(--washi3); position: relative; border-radius: 1px; }
+.gen-bar-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.4s ease; border-radius: 1px; }
+.gen-label { font-size: 10px; color: var(--ink3); margin-top: 4px; letter-spacing: 0.08em; }
+
+.record-area {
+  padding: 16px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  flex-shrink: 0;
+}
+
+.waveform { display: flex; align-items: center; gap: 4px; height: 24px; opacity: 0; transition: opacity 0.3s; }
+.waveform.active { opacity: 1; }
+.wave-bar { width: 4px; background: var(--red); border-radius: 2px; height: 4px; transition: height 0.1s; }
+
+.record-btn {
+  width: 88px; height: 88px; border-radius: 50%;
+  border: 3px solid var(--red); background: white;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; box-shadow: 0 2px 12px var(--shadow); font-size: 36px;
+}
+.record-btn:hover { background: rgba(181,57,42,0.05); }
+.record-btn.recording { background: var(--red); animation: pulseRed 1.4s ease-in-out infinite; }
+@keyframes pulseRed { 0%,100% { box-shadow: 0 0 0 0 rgba(181,57,42,0.4); } 50% { box-shadow: 0 0 0 14px rgba(181,57,42,0); } }
+
+.record-label { font-size: 16px; color: var(--ink2); letter-spacing: 0.1em; text-align: center; }
+
+.recognized-area { width: 100%; }
+.recognized-ta {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 12px 14px;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
+  outline: none; resize: none; min-height: 80px;
+  border-radius: 4px; line-height: 1.7;
+}
+.recognized-ta:focus { border-color: var(--gold); }
+
+.action-row { display: flex; gap: 8px; width: 100%; }
+.btn-clear {
+  background: transparent; border: 1px solid var(--washi3);
+  color: var(--ink2); padding: 12px 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px; border-radius: 4px;
+}
+.btn-send {
+  flex: 1; background: var(--ink); color: white; border: none;
+  padding: 10px 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
+  letter-spacing: 0.1em; border-radius: 4px; transition: opacity 0.15s;
+}
+.btn-send:disabled { background: var(--washi3); color: var(--ink2); cursor: default; }
+.btn-text-toggle {
+  font-size: 14px; color: var(--ink2); background: none; border: none;
+  cursor: pointer; font-family: 'Noto Serif JP', serif; letter-spacing: 0.06em;
+}
+
+.text-row-wrap {
+  display: none; width: 100%;
+  flex-direction: column; gap: 6px;
+}
+.text-input-field {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 17px;
+  outline: none; border-radius: 4px;
+}
+.text-input-field:focus { border-color: var(--gold); }
+
+.finish-btn {
+  margin: 12px 18px; background: transparent;
+  border: 1px solid var(--red); color: var(--red);
+  padding: 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.1em; border-radius: 4px; text-align: center; transition: all 0.15s;
+}
+.finish-btn:hover { background: rgba(181,57,42,0.05); }
+
+/* ===== 待機画面 ===== */
+#screen-waiting {
+  align-items: center; justify-content: center;
+  padding: 40px 24px; gap: 20px;
+}
+.waiting-title { font-family: 'Shippori Mincho', serif; font-size: 22px; color: var(--ink); letter-spacing: 0.12em; }
+.waiting-spinner {
+  width: 48px; height: 48px;
+  border: 2px solid var(--washi3); border-top-color: var(--gold);
+  border-radius: 50%; animation: spin 1.2s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.waiting-progress-wrap {
+  width: 100%; max-width: 320px; height: 3px;
+  background: var(--washi3); border-radius: 2px; position: relative; overflow: hidden;
+}
+.waiting-progress-fill { position: absolute; top: 0; left: 0; height: 100%; background: var(--gold); transition: width 0.5s ease; }
+.waiting-count { font-size: 16px; color: var(--ink2); letter-spacing: 0.1em; }
+.waiting-skip-btn {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 12px 28px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; border-radius: 4px; letter-spacing: 0.06em;
+}
+
+/* ===== フィナーレ画面 ===== */
+#screen-finale { align-items: center; padding: 24px 20px; gap: 16px; overflow-y: auto; }
+
+.finale-header {
+  font-family: 'Shippori Mincho', serif;
+  font-size: clamp(1.4rem, 5vw, 2rem);
+  color: var(--ink); letter-spacing: 0.15em; text-align: center;
+}
+.finale-sub { font-size: 16px; color: var(--ink2); letter-spacing: 0.12em; }
+
+.finale-frame {
+  width: 100%; max-width: 640px;
+  background: white; border: 1px solid var(--washi3);
+  box-shadow: 0 4px 24px var(--shadow);
+}
+.finale-frame img { width: 100%; display: block; min-height: 200px; object-fit: cover; }
+.finale-text {
+  padding: 20px 24px; font-size: 20px; line-height: 1.9;
+  color: var(--ink); border-top: 1px solid var(--washi3); min-height: 60px;
+}
+
+.slide-nav { display: flex; align-items: center; gap: 16px; }
+.slide-nav-btn {
+  background: white; border: 1px solid var(--washi3); color: var(--ink2);
+  width: 52px; height: 52px; cursor: pointer; font-size: 20px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.slide-nav-btn:hover { border-color: var(--gold); }
+.slide-counter { font-size: 17px; color: var(--ink2); letter-spacing: 0.1em; min-width: 60px; text-align: center; }
+
+.finale-dots { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; max-width: 300px; }
+.finale-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--washi3); cursor: pointer; transition: all 0.2s; }
+.finale-dot.active { background: var(--red); transform: scale(1.3); }
+
+.finale-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; max-width: 640px; width: 100%; }
+.btn-play {
+  background: var(--red); color: white; border: none;
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.12em; border-radius: 4px;
+}
+.btn-print {
+  background: white; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.12em; border-radius: 4px;
+}
+.btn-again {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
+  padding: 12px 24px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; letter-spacing: 0.1em; border-radius: 4px;
+}
+
+.scene-grid-wrap { width: 100%; max-width: 640px; }
+.scene-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.grid-item {
+  background: white; border: 1px solid var(--washi3);
+  cursor: pointer; transition: all 0.15s; overflow: hidden;
+  border-radius: 3px; position: relative;
+}
+.grid-item:hover { border-color: var(--gold); box-shadow: 0 2px 8px var(--shadow); }
+.grid-item img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; }
+.grid-no-img { width: 100%; aspect-ratio: 4/3; background: var(--washi2); display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--ink3); }
+.grid-text { padding: 8px 10px; font-size: 13px; color: var(--ink2); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.grid-num { position: absolute; top: 4px; left: 4px; font-size: 12px; color: var(--ink2); background: rgba(255,255,255,0.8); padding: 1px 5px; border-radius: 2px; }
+
+/* ポップアップ */
+.popup-overlay {
+  position: fixed; inset: 0; background: rgba(42,35,26,0.6);
+  z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.popup-overlay.hidden { display: none; }
+.popup-card {
+  background: var(--washi); max-width: 360px; width: 100%;
+  padding: 28px 24px; text-align: center;
+  box-shadow: 0 8px 40px rgba(42,35,26,0.3);
+  border: 1px solid var(--washi3);
+}
+.popup-icon { font-size: 40px; margin-bottom: 14px; }
+.popup-title { font-family: 'Shippori Mincho', serif; font-size: 24px; color: var(--ink); margin-bottom: 10px; letter-spacing: 0.08em; }
+.popup-text { font-size: 17px; color: var(--ink); line-height: 1.8; margin-bottom: 20px; }
+.popup-btns { display: flex; flex-direction: column; gap: 8px; }
+.popup-btn-main {
+  background: var(--red); color: white; border: none; padding: 16px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 18px; letter-spacing: 0.1em; border-radius: 4px;
+}
+.popup-btn-sub {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px; letter-spacing: 0.06em; border-radius: 4px;
+}
+
+/* テキスト確認ポップアップ（シニア向け大きめ） */
+.confirm-card {
+  background: var(--washi); max-width: 500px; width: 100%;
+  padding: 32px 28px;
+  box-shadow: 0 8px 40px rgba(42,35,26,0.3);
+  border: 1px solid var(--washi3);
+  display: flex; flex-direction: column; gap: 20px;
+}
+.confirm-title {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 18px; color: var(--ink);
+  letter-spacing: 0.1em; text-align: center;
+}
+.confirm-text-display {
+  background: white; border: 2px solid var(--gold);
+  border-radius: 6px; padding: 18px 20px;
+  font-family: 'Noto Serif JP', serif;
+  font-size: 22px; line-height: 1.8;
+  color: var(--ink); min-height: 80px;
+  word-break: break-all;
+}
+.confirm-edit-area {
+  display: none; flex-direction: column; gap: 8px;
+}
+.confirm-edit-area.visible { display: flex; }
+.confirm-edit-label {
+  font-size: 12px; color: var(--ink3); letter-spacing: 0.1em;
+}
+.confirm-textarea {
+  width: 100%; background: white; border: 2px solid var(--gold);
+  color: var(--ink); padding: 14px 16px;
+  font-family: 'Noto Serif JP', serif; font-size: 20px;
+  outline: none; resize: vertical; min-height: 100px;
+  border-radius: 6px; line-height: 1.8;
+}
+.confirm-textarea:focus { border-color: var(--red); }
+.confirm-btns { display: flex; flex-direction: column; gap: 10px; }
+.confirm-btn-ok {
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 20px;
+  letter-spacing: 0.15em; border-radius: 6px;
+  transition: opacity 0.2s;
+}
+.confirm-btn-ok:hover { opacity: 0.88; }
+.confirm-btn-edit {
+  background: white; border: 2px solid var(--ink3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.1em; border-radius: 6px;
+  transition: all 0.2s;
+}
+.confirm-btn-edit:hover { border-color: var(--gold); color: var(--ink); }
+.confirm-btn-cancel {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink3);
+  padding: 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  letter-spacing: 0.06em; border-radius: 4px;
+}
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--ink); color: white; padding: 12px 20px;
+  font-size: 13px; letter-spacing: 0.06em; z-index: 300;
+  animation: toastIn 0.3s ease; max-width: 320px; text-align: center;
+  border-radius: 4px; line-height: 1.6;
+}
+@keyframes toastIn { from { opacity:0; transform:translateX(-50%) translateY(10px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+
+/* ===== モード選択 ===== */
+.mode-section { width: 100%; max-width: 480px; margin-bottom: 24px; }
+.mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mode-btn {
+  background: white; border: 2px solid var(--washi3);
+  color: var(--ink2); padding: 16px 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 14px;
+  text-align: center; border-radius: 8px; transition: all 0.2s; line-height: 1.6;
+}
+.mode-btn:hover { border-color: var(--gold); }
+.mode-btn.active { border-color: var(--red); background: rgba(181,57,42,0.05); color: var(--red); }
+.mode-icon { display: block; font-size: 28px; margin-bottom: 4px; }
+.mode-name { display: block; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; }
+.mode-desc { display: block; font-size: 12px; color: var(--ink3); margin-top: 3px; }
+.mode-btn.active .mode-desc { color: var(--red); opacity: 0.7; }
+
+/* ===== Yes ANDゲーム画面 ===== */
+#screen-yesand { flex-direction: column; }
+.yesand-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--washi);
+  border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.yesand-logo { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); }
+.yesand-logo span { color: var(--red); }
+.yesand-mode-badge {
+  font-size: 13px; color: var(--gold); border: 1px solid var(--gold);
+  padding: 4px 12px; border-radius: 20px; letter-spacing: 0.06em;
+}
+.yesand-body {
+  flex: 1; display: grid; grid-template-columns: 1fr 360px;
+  overflow: hidden; height: calc(100vh - 57px);
+}
+@media (max-width: 680px) {
+  .yesand-body { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+}
+.yesand-log {
+  padding: 20px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 14px;
+  border-right: 1px solid var(--washi3);
+}
+.yesand-log::-webkit-scrollbar { width: 3px; }
+.yesand-log::-webkit-scrollbar-thumb { background: var(--washi3); }
+
+.yesand-bubble { display: flex; flex-direction: column; gap: 4px; animation: fadeSlide 0.4s ease; }
+.yesand-bubble.ai-bubble .yesand-text { background: rgba(200,146,42,0.08); border-left: 3px solid var(--gold); }
+.yesand-bubble.topic-bubble .yesand-text { background: rgba(107,124,94,0.1); border-left: 3px solid var(--sage); font-style: italic; }
+.yesand-who { font-size: 14px; color: var(--ink2); letter-spacing: 0.08em; display: flex; align-items: center; gap: 5px; }
+.yesand-text { background: white; border-left: 3px solid var(--washi3); padding: 14px 16px; font-size: 17px; line-height: 1.8; color: var(--ink); }
+
+.yesand-input-panel { display: flex; flex-direction: column; background: var(--washi); overflow-y: auto; }
+.yesand-topic-box {
+  margin: 16px 18px; background: rgba(107,124,94,0.08);
+  border: 1px solid rgba(107,124,94,0.3); padding: 14px 16px; border-radius: 6px;
+}
+.yesand-topic-label { font-size: 13px; color: var(--sage); letter-spacing: 0.1em; margin-bottom: 6px; }
+.yesand-topic-text { font-size: 17px; color: var(--ink); line-height: 1.7; }
+.yesand-topic-refresh {
+  display: flex; gap: 8px; margin-top: 10px;
+}
+.btn-new-topic {
+  background: transparent; border: 1px solid var(--sage);
+  color: var(--sage); padding: 6px 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.btn-new-topic:hover { background: rgba(107,124,94,0.1); }
+.btn-own-topic {
+  background: transparent; border: 1px solid var(--washi3);
+  color: var(--ink2); padding: 6px 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 13px;
+  border-radius: 4px; transition: all 0.15s;
+}
+.own-topic-wrap { display: none; flex-direction: column; gap: 8px; margin-top: 8px; }
+.own-topic-input {
+  width: 100%; background: white; border: 1px solid var(--washi3);
+  color: var(--ink); padding: 10px 12px;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  outline: none; border-radius: 4px;
+}
+.own-topic-input:focus { border-color: var(--gold); }
+.btn-set-topic {
+  background: var(--sage); color: white; border: none;
+  padding: 10px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 15px;
+  border-radius: 4px; letter-spacing: 0.08em;
+}
+
+.yesand-turn-badge {
+  padding: 12px 18px; border-bottom: 1px solid var(--washi3); flex-shrink: 0;
+}
+.yesand-turn-name { font-family: 'Shippori Mincho', serif; font-size: 20px; color: var(--ink); }
+.yesand-turn-hint { font-size: 14px; color: var(--ink2); margin-top: 4px; line-height: 1.6; }
+
+.yesand-record-area {
+  padding: 16px 18px; display: flex; flex-direction: column;
+  align-items: center; gap: 12px; flex-shrink: 0;
+}
+.yesand-finish-btn {
+  margin: 12px 18px; background: transparent;
+  border: 1px solid var(--red); color: var(--red);
+  padding: 12px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.1em; border-radius: 4px; text-align: center;
+}
+.yesand-finish-btn:hover { background: rgba(181,57,42,0.05); }
+
+/* ===== Yes ANDおわり画面 ===== */
+#screen-yesand-end { align-items: center; padding: 40px 24px; gap: 20px; overflow-y: auto; }
+.yesand-end-title { font-family: 'Shippori Mincho', serif; font-size: 28px; color: var(--ink); letter-spacing: 0.15em; }
+.yesand-end-sub { font-size: 16px; color: var(--ink2); }
+.yesand-end-log {
+  width: 100%; max-width: 560px;
+  background: white; border: 1px solid var(--washi3);
+  border-radius: 6px; padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+  max-height: 360px; overflow-y: auto;
+}
+.yesand-end-line { font-size: 16px; line-height: 1.8; color: var(--ink); }
+.yesand-end-line .who { font-size: 13px; color: var(--ink3); margin-right: 8px; }
+.yesand-end-btns { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 420px; }
+.btn-make-ehon {
+  background: var(--red); color: white; border: none;
+  padding: 18px; cursor: pointer;
+  font-family: 'Shippori Mincho', serif; font-size: 20px;
+  letter-spacing: 0.15em; border-radius: 6px;
+}
+.btn-end-only {
+  background: transparent; border: 1px solid var(--washi3); color: var(--ink2);
+  padding: 14px; cursor: pointer;
+  font-family: 'Noto Serif JP', serif; font-size: 16px;
+  letter-spacing: 0.08em; border-radius: 6px;
+}
+
+@media print {
+  .game-header, .input-panel, .finish-btn,
+  .finale-controls, .slide-nav, .finale-dots,
+  .scene-grid-wrap, .btn-again { display: none !important; }
+  body { background: white; }
+  .finale-frame { box-shadow: none; border: 1px solid #ccc; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+
+<!-- ========== タイトル画面 ========== -->
+<div id="screen-title" class="screen active">
+  <div class="title-kamon">📖</div>
+  <h1 class="title-main">えほん<span>シニア</span></h1>
+  <p class="title-sub">— 思い出を絵本にする —</p>
+  <div class="title-divider"></div>
+
+  <div class="key-section">
+    <span class="key-label">■ OpenAI APIキー（絵の生成に使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-openai" type="password" placeholder="sk-..." />
+      <button class="key-btn" onclick="saveKey('openai')">保存</button>
+    </div>
+    <div class="key-status" id="status-openai">未設定</div>
+  </div>
+
+  <div class="key-section">
+    <span class="key-label">■ Anthropic APIキー（AIの語りかけに使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-anthropic" type="password" placeholder="sk-ant-..." />
+      <button class="key-btn" onclick="saveKey('anthropic')">保存</button>
+    </div>
+    <div class="key-status" id="status-anthropic">未設定</div>
+  </div>
+
+  <div class="key-section">
+    <span class="key-label">■ Google Cloud APIキー（自然な日本語音声に使います）</span>
+    <div class="key-row">
+      <input class="key-input" id="key-google" type="password" placeholder="AIza..." />
+      <button class="key-btn" onclick="saveKey('google')">保存</button>
+    </div>
+    <div class="key-status" id="status-google">未設定（省略可・省略時はブラウザ音声）</div>
+  </div>
+
+  <div class="title-divider"></div>
+
+  <!-- 性別選択 -->
+  <div class="gender-section">
+    <div class="members-label">語り手の性別を教えてください</div>
+    <div class="gender-grid">
+      <button class="member-btn active" id="gender-male" onclick="selectGender('male')">
+        <span class="member-num">男性</span>おじいちゃん・おじさん
+      </button>
+      <button class="member-btn" id="gender-female" onclick="selectGender('female')">
+        <span class="member-num">女性</span>おばあちゃん・おばさん
+      </button>
+    </div>
+  </div>
+
+  <div class="age-section">
+    <div class="members-label">今のご年齢を教えてください</div>
+    <div class="age-row">
+      <span class="age-label-text">現在</span>
+      <input class="age-input" id="narrator-age" type="number" min="40" max="100"
+        value="70" oninput="onAgeInput(this.value)" />
+      <span class="age-unit">歳</span>
+    </div>
+  </div>
+
+  <div class="members-section">
+    <div class="members-label">今日は何人で語りますか？</div>
+    <div class="members-grid">
+      <button class="member-btn active" id="mb-1" onclick="selectMembers(1)">
+        <span class="member-num">一人</span>AIと二人で
+      </button>
+      <button class="member-btn" id="mb-2" onclick="selectMembers(2)">
+        <span class="member-num">二人</span>仲間と一緒
+      </button>
+      <button class="member-btn" id="mb-3" onclick="selectMembers(3)">
+        <span class="member-num">三人</span>みんなで
+      </button>
+    </div>
+  </div>
+
+  <div class="names-section">
+    <div class="name-inputs" id="name-inputs"></div>
+  </div>
+
+  <!-- モード選択 -->
+  <div class="mode-section">
+    <div class="members-label">どのモードで話しますか？</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" id="mode-ehon" onclick="selectMode('ehon')">
+        <span class="mode-icon">📖</span>
+        <span class="mode-name">思い出を絵本に</span>
+        <span class="mode-desc">AIが問いかけ、語りが絵本になる</span>
+      </button>
+      <button class="mode-btn" id="mode-anokoro" onclick="selectMode('anokoro')">
+        <span class="mode-icon">💬</span>
+        <span class="mode-name">あのころ話</span>
+        <span class="mode-desc">つづきをどうぞ</span>
+      </button>
+      <button class="mode-btn" id="mode-mirai" onclick="selectMode('mirai')">
+        <span class="mode-icon">🌟</span>
+        <span class="mode-name">未来話</span>
+        <span class="mode-desc">そうなったらいいね</span>
+      </button>
+      <button class="mode-btn" id="mode-moshimo" onclick="selectMode('moshimo')">
+        <span class="mode-icon">🌿</span>
+        <span class="mode-name">もしも話</span>
+        <span class="mode-desc">あの時こうしていたら</span>
+      </button>
+      <button class="mode-btn" id="mode-kansha" onclick="selectMode('kansha')">
+        <span class="mode-icon">🌸</span>
+        <span class="mode-name">感謝話</span>
+        <span class="mode-desc">ありがとうを伝えたい人へ</span>
+      </button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="start-btn-main" onclick="startSelectedMode()">始める</button>
+</div>
+
+<!-- ========== ゲーム画面 ========== -->
+<div id="screen-game" class="screen">
+  <div class="game-header">
+    <div class="game-logo">えほん<span>シニア</span></div>
+    <div class="turn-progress">
+      <div id="turn-dots" style="display:flex;gap:5px;"></div>
+      <span class="turn-label" id="turn-label">1/8</span>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <div class="story-panel" id="story-panel"></div>
+
+    <div class="input-panel" id="input-panel">
+      <div class="current-speaker">
+        <div class="speaker-name" id="speaker-name">…</div>
+        <div class="speaker-hint" id="speaker-hint">…</div>
+      </div>
+
+      <div class="ai-question-box" id="ai-question-box" style="display:none">
+        <div class="ai-question-label">AIからの問いかけ</div>
+        <div class="ai-question-text" id="ai-question-text"></div>
+        <div class="ai-question-refresh">
+          <button class="btn-refresh-question" id="btn-refresh-question"
+            onclick="refreshQuestion()" title="別の問いかけに変える">
+            🔄 別の問いかけ
+          </button>
+        </div>
+      </div>
+
+      <div class="ai-thinking" id="ai-thinking" style="display:none">
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+        <div class="thinking-dot"></div>
+        <span style="font-size:16px;color:var(--gold);letter-spacing:0.08em;margin-left:4px;">AIが問いを考えています…</span>
+      </div>
+
+      <div class="gen-progress" id="gen-progress" style="display:none">
+        <div class="gen-bar-track">
+          <div class="gen-bar-fill" id="gen-bar-fill" style="width:0%"></div>
+        </div>
+        <div class="gen-label" id="gen-label">絵を描いています…</div>
+      </div>
+
+      <div class="record-area" id="record-area">
+        <div class="waveform" id="waveform">
+          <div class="wave-bar" id="wb0"></div>
+          <div class="wave-bar" id="wb1"></div>
+          <div class="wave-bar" id="wb2"></div>
+          <div class="wave-bar" id="wb3"></div>
+          <div class="wave-bar" id="wb4"></div>
+        </div>
+
+        <button class="record-btn" id="record-btn"
+          onmousedown="startRecord()" onmouseup="stopRecord()"
+          ontouchstart="startRecord()" ontouchend="stopRecord()">🎙️</button>
+
+        <div class="record-label" id="record-label">押しながら話す</div>
+
+        <div class="recognized-area">
+          <textarea class="recognized-ta" id="recognized-ta"
+            rows="3" placeholder="ここに話した言葉が出ます"
+            oninput="onTextEdit(this.value)"></textarea>
+        </div>
+
+        <div class="action-row">
+          <button class="btn-clear" onclick="clearInput()">やり直す</button>
+          <button class="btn-send" id="btn-send" onclick="submitTurn()" disabled>次へ →</button>
+        </div>
+
+        <button class="btn-text-toggle" onclick="toggleTextRow()">✏️ 文字で入力する</button>
+        <!-- BUG FIX: display:flex + flex-direction:column をclassで管理 -->
+        <div class="text-row-wrap" id="text-row-wrap">
+          <input type="text" class="text-input-field" id="text-input"
+            placeholder="ここに入力してください…" />
+          <button class="btn-send" onclick="submitFromText()">次へ →</button>
+        </div>
+      </div>
+
+      <button class="finish-btn" onclick="confirmFinish()">絵本を完成させる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Yes ANDゲーム画面 ========== -->
+<div id="screen-yesand" class="screen">
+  <div class="yesand-header">
+    <div class="yesand-logo">えほん<span>シニア</span></div>
+    <div class="yesand-mode-badge" id="yesand-mode-badge">あのころ話</div>
+  </div>
+  <div class="yesand-body">
+    <div class="yesand-log" id="yesand-log"></div>
+    <div class="yesand-input-panel">
+      <!-- お題表示 -->
+      <div class="yesand-topic-box" id="yesand-topic-box">
+        <div class="yesand-topic-label">🎯 お題</div>
+        <div class="yesand-topic-text" id="yesand-topic-text">考えています…</div>
+        <div class="yesand-topic-refresh">
+          <button class="btn-new-topic" onclick="refreshTopic()">🔄 別のお題</button>
+          <button class="btn-own-topic" onclick="toggleOwnTopic()">✏️ 自分で入力</button>
+        </div>
+        <div class="own-topic-wrap" id="own-topic-wrap">
+          <input class="own-topic-input" id="own-topic-input" placeholder="お題を入力…" />
+          <button class="btn-set-topic" onclick="setOwnTopic()">このお題で始める</button>
+        </div>
+      </div>
+      <!-- 誰の番か -->
+      <div class="yesand-turn-badge">
+        <div class="yesand-turn-name" id="yesand-turn-name">…</div>
+        <div class="yesand-turn-hint" id="yesand-turn-hint">…</div>
+      </div>
+      <!-- AI thinking -->
+      <div class="ai-thinking" id="yesand-thinking" style="display:none">
+        <div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>
+        <span style="font-size:16px;color:var(--gold);margin-left:4px;">考えています…</span>
+      </div>
+      <!-- 録音エリア -->
+      <div class="yesand-record-area" id="yesand-record-area">
+        <div class="waveform" id="yesand-waveform">
+          <div class="wave-bar" id="yw0"></div><div class="wave-bar" id="yw1"></div>
+          <div class="wave-bar" id="yw2"></div><div class="wave-bar" id="yw3"></div>
+          <div class="wave-bar" id="yw4"></div>
+        </div>
+        <button class="record-btn" id="yesand-record-btn"
+          onmousedown="yaStartRecord()" onmouseup="yaStopRecord()"
+          ontouchstart="yaStartRecord()" ontouchend="yaStopRecord()">🎙️</button>
+        <div class="record-label" id="yesand-record-label">押しながら話す</div>
+        <div class="recognized-area">
+          <textarea class="recognized-ta" id="yesand-ta"
+            rows="3" placeholder="ここに話した言葉が出ます"
+            oninput="yaOnTextEdit(this.value)"></textarea>
+        </div>
+        <div class="action-row">
+          <button class="btn-clear" onclick="yaClearInput()">やり直す</button>
+          <button class="btn-send" id="yesand-send-btn" onclick="yaSubmitTurn()" disabled>つづける →</button>
+        </div>
+        <button class="btn-text-toggle" onclick="yaToggleText()">✏️ 文字で入力する</button>
+        <div class="text-row-wrap" id="yesand-text-wrap">
+          <input type="text" class="text-input-field" id="yesand-text-input" placeholder="ここに入力…" />
+          <button class="btn-send" onclick="yaSubmitFromText()">つづける →</button>
+        </div>
+      </div>
+      <button class="yesand-finish-btn" onclick="yaFinish()">話を終わらせる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ========== Yes ANDおわり画面 ========== -->
+<div id="screen-yesand-end" class="screen">
+  <div class="yesand-end-title" id="ya-end-title">話が終わりました</div>
+  <div class="yesand-end-sub" id="ya-end-sub">すてきな話でした</div>
+  <div class="yesand-end-log" id="ya-end-log"></div>
+  <div class="yesand-end-btns">
+    <button class="btn-make-ehon" onclick="yaToEhon()">📖 絵本にする</button>
+    <button class="btn-end-only" onclick="resetAll()">🔄 もう一度</button>
+  </div>
+</div>
+
+<!-- ========== 待機画面 ========== -->
+<div id="screen-waiting" class="screen">
+  <div class="waiting-title">絵を描いています…</div>
+  <div class="waiting-spinner"></div>
+  <div class="waiting-progress-wrap">
+    <div class="waiting-progress-fill" id="waiting-fill" style="width:0%"></div>
+  </div>
+  <div class="waiting-count" id="waiting-count">0 / 0 枚完成</div>
+  <button class="waiting-skip-btn" onclick="skipWaiting()">このまま進む</button>
+</div>
+
+<!-- ========== フィナーレ画面 ========== -->
+<div id="screen-finale" class="screen">
+  <div class="finale-header">絵本ができました</div>
+  <div class="finale-sub" id="finale-title-text">みんなの思い出の絵本</div>
+
+  <div class="finale-frame">
+    <img id="finale-img" src="" alt="" style="display:none;" />
+    <div id="finale-no-img" class="grid-no-img" style="min-height:200px;">📖</div>
+    <div class="finale-text" id="finale-text"></div>
+  </div>
+
+  <div class="slide-nav">
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide-1)">◀</button>
+    <div class="slide-counter" id="slide-counter">1 / 1</div>
+    <button class="slide-nav-btn" onclick="gotoSlide(currentSlide+1)">▶</button>
+  </div>
+
+  <div class="finale-dots" id="finale-dots"></div>
+
+  <div class="finale-controls">
+    <button class="btn-play" id="btn-play" onclick="playbackAll()">▶ 再生する</button>
+    <button class="btn-print" onclick="printStory()">🖨 印刷して家族に渡す</button>
+  </div>
+
+  <div class="scene-grid-wrap">
+    <div class="scene-grid" id="scene-grid"></div>
+  </div>
+
+  <button class="btn-again" onclick="resetAll()">🔄 もう一度作る</button>
+</div>
+
+<!-- ポップアップ：終了確認 -->
+<div id="popup-finish" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">📖</div>
+    <div class="popup-title">絵本にしますか？</div>
+    <div class="popup-text">これまでの思い出をまとめて絵本にします。</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="finishStory()">絵本を作る</button>
+      <button class="popup-btn-sub" onclick="hidePopup('popup-finish')">まだ続ける</button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：テキスト確認（送信前） -->
+<div id="popup-confirm-text" class="popup-overlay hidden">
+  <div class="confirm-card">
+    <div class="confirm-title">✅ このことばで合っていますか？</div>
+
+    <!-- 表示モード -->
+    <div class="confirm-text-display" id="confirm-text-display"></div>
+
+    <!-- 編集モード（修正ボタンを押したら表示） -->
+    <div class="confirm-edit-area" id="confirm-edit-area">
+      <div class="confirm-edit-label">▼ 修正してください</div>
+      <textarea class="confirm-textarea" id="confirm-textarea"></textarea>
+    </div>
+
+    <div class="confirm-btns">
+      <button class="confirm-btn-ok" id="confirm-btn-ok" onclick="confirmTextOK()">
+        ✓ &nbsp;はい、合っています
+      </button>
+      <button class="confirm-btn-edit" id="confirm-btn-edit" onclick="confirmTextEdit()">
+        ✏️ &nbsp;修正する
+      </button>
+      <button class="confirm-btn-cancel" onclick="confirmTextCancel()">
+        やり直す（もう一度録音）
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：フィルタリング確認 -->
+<div id="popup-filter" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🤔</div>
+    <div class="popup-title" id="filter-title">思い出の語りではないようです</div>
+    <div class="popup-text" id="filter-text">この内容は絵本のページにしますか？</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="filterProceed()">このまま絵本に入れる</button>
+      <button class="popup-btn-sub" onclick="filterSkip()">スキップして次の問いへ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：声の選択 -->
+<div id="popup-voice-select" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🎙</div>
+    <div class="popup-title">どちらの声で読みますか？</div>
+    <div class="popup-text">絵本を読み上げる声を選んでください</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="startPlaybackWithVoice('user')">
+        🎙 じぶんの声で聴く
+      </button>
+      <button class="popup-btn-main" style="background:var(--gold);margin-top:2px;" onclick="startPlaybackWithVoice('ai')">
+        🔊 AIの声で聴く
+      </button>
+      <button class="popup-btn-sub" onclick="hidePopup('popup-voice-select')">
+        キャンセル
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ポップアップ：自動終了 -->
+<div id="popup-continue" class="popup-overlay hidden">
+  <div class="popup-card">
+    <div class="popup-icon">🌸</div>
+    <div class="popup-title">たくさん語りましたね</div>
+    <div class="popup-text">絵本にしますか？まだ続けることもできます。</div>
+    <div class="popup-btns">
+      <button class="popup-btn-main" onclick="finishStory()">絵本を作る</button>
+      <button class="popup-btn-sub" onclick="continueStory()">もう少し続ける</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  STATE
+// ============================================================
+const AVATARS = ['🌸','🍂','🌿','🌾','🌼','🍁','🎋','🌺'];
+
+let state = {
+  keys: { openai: '', anthropic: '', google: '' },
+  memberCount: 1,
+  gender: 'male',   // 'male' | 'female'
+  age: 70,           // 語り手の現在の年齢
+  playbackMode: 'ai', // 'ai' | 'user'
+  players: [],
+  currentPlayerIdx: 0,
+  turns: [],
+  totalTurns: 0,
+  maxTurns: 8,
+  isRecording: false,
+  recognizedText: '',
+  currentQuestion: '',
+  storyTitle: '',
+  pendingTurnText: '',   // フィルタリング判定中のテキスト一時保存
+  appMode: 'ehon',
+  storyContext: {       // 3ターン目に収集した物語の背景情報
+    era: '',            // 時代（例：「昭和40年代・子供の頃」）
+    place: '',          // 場所（例：「九州の農村」）
+    characters: '',     // 登場人物（例：「母・祖母」）
+    checked: false,     // チェック済みフラグ
+  },
+  skipNextImage: false, // 次のターンの絵生成をスキップするフラグ
+};
+
+// Yes AND専用ステート
+let ya = {
+  mode: 'anokoro',
+  topic: '',
+  turns: [],
+  currentPlayerIdx: 0,
+  players: [],
+  isRecording: false,
+  recognizedText: '',
+  topicLocked: false,
+  generating: false,
+};
+
+let bgGenCompleted = 0;
+let bgGenTotal = 0;
+const imageGenQueue = [];
+let imageGenRunning = false;
+
+let currentSlide = 0;
+let isPlaying = false;
+
+// ============================================================
+//  INIT
+// ============================================================
+(function init() {
+  const ok = localStorage.getItem('ehon_openai') || '';
+  const ak = localStorage.getItem('ehon_anthropic') || '';
+  const gk = localStorage.getItem('ehon_google') || '';
+  if (ok) { state.keys.openai = ok; setKeyStatus('openai', true); }
+  if (ak) { state.keys.anthropic = ak; setKeyStatus('anthropic', true); }
+  if (gk) { state.keys.google = gk; setKeyStatus('google', true); }
+  // voiceschangedを早めに登録してキャッシュさせる
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+    window.speechSynthesis.getVoices();
+  }
+  updateNameInputs();
+})();
+
+function saveKey(type) {
+  const val = document.getElementById('key-' + type).value.trim();
+  if (!val || val === '••••••••') return;
+  state.keys[type] = val;
+  localStorage.setItem('ehon_' + type, val);
+  document.getElementById('key-' + type).value = '••••••••';
+  setKeyStatus(type, true);
+}
+
+function setKeyStatus(type, ok) {
+  const el = document.getElementById('status-' + type);
+  if (ok) {
+    el.textContent = '設定済み ✓';
+    el.className = 'key-status ok';
+  } else {
+    el.textContent = type === 'google'
+      ? '未設定（省略可・省略時はブラウザ音声）'
+      : '未設定';
+    el.className = 'key-status';
+  }
+}
+
+// ============================================================
+//  MODE SELECTION
+// ============================================================
+const MODE_NAMES = {
+  ehon:    '思い出を絵本に',
+  anokoro: 'あのころ話',
+  mirai:   '未来話',
+  moshimo: 'もしも話',
+  kansha:  '感謝話',
+};
+
+function selectMode(m) {
+  state.appMode = m;
+  ['ehon','anokoro','mirai','moshimo','kansha'].forEach(id => {
+    document.getElementById('mode-' + id).classList.toggle('active', id === m);
+  });
+  document.getElementById('start-btn-main').textContent =
+    m === 'ehon' ? '物語を始める' : MODE_NAMES[m] + ' を始める';
+}
+
+function startSelectedMode() {
+  if (state.appMode === 'ehon') {
+    startStory();
+  } else {
+    startYesAnd(state.appMode);
+  }
+}
+
+// ============================================================
+//  GENDER SELECTION
+// ============================================================
+function selectGender(g) {
+  state.gender = g;
+  document.getElementById('gender-male').classList.toggle('active', g === 'male');
+  document.getElementById('gender-female').classList.toggle('active', g === 'female');
+}
+
+function onAgeInput(val) {
+  const n = parseInt(val, 10);
+  if (!isNaN(n) && n >= 1 && n <= 120) state.age = n;
+}
+
+// ============================================================
+//  MEMBER SELECTION
+// ============================================================
+function selectMembers(n) {
+  state.memberCount = n;
+  [1,2,3].forEach(i => document.getElementById('mb-' + i).classList.toggle('active', i === n));
+  updateNameInputs();
+}
+
+function updateNameInputs() {
+  const container = document.getElementById('name-inputs');
+  container.innerHTML = '';
+  const defaults = ['おじいちゃん', 'おばあちゃん', '友達'];
+  for (let i = 0; i < state.memberCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'name-row';
+    row.innerHTML = `
+      <div class="name-avatar">${AVATARS[i]}</div>
+      <input class="name-field" id="name-${i}"
+        placeholder="${defaults[i] || ('参加者' + (i+1))}"
+        value="${defaults[i] || ('参加者' + (i+1))}" />`;
+    container.appendChild(row);
+  }
+}
+
+// ============================================================
+//  START
+// ============================================================
+function startStory() {
+  if (!state.keys.anthropic) {
+    showToast('Anthropic APIキーを設定してください');
+    return;
+  }
+
+  state.players = [];
+  for (let i = 0; i < state.memberCount; i++) {
+    const inp = document.getElementById('name-' + i);
+    state.players.push({
+      name: inp?.value.trim() || ('参加者' + (i+1)),
+      avatar: AVATARS[i],
+    });
+  }
+
+  // 年齢の読み取り
+  const ageVal = parseInt(document.getElementById('narrator-age')?.value, 10);
+  if (!isNaN(ageVal) && ageVal >= 1 && ageVal <= 120) state.age = ageVal;
+
+  // BUG FIX: maxTurnsも確実にリセット
+  state.turns = [];
+  state.totalTurns = 0;
+  state.maxTurns = 8;
+  state.currentPlayerIdx = 0;
+  state.recognizedText = '';
+  state.currentQuestion = '';
+  state.storyTitle = '';
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
+  bgGenCompleted = 0;
+  bgGenTotal = 0;
+  imageGenQueue.length = 0;
+  imageGenRunning = false;
+
+  buildTurnDots();
+  showScreen('game');
+  document.getElementById('story-panel').innerHTML = '';
+  clearInput();
+
+  // AIから最初の問いかけ（BUG FIX: .catch()でエラー時もUIを復旧）
+  showAIThinking(true);
+  generateFirstQuestion()
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      showAIThinking(false);
+      const fallback = 'どんな子供の頃の思い出がありますか？どんな遊びをしていましたか？';
+      state.currentQuestion = fallback;
+      showAIQuestion(fallback);
+      updateSpeakerBadge();
+    });
+}
+
+// ============================================================
+//  AI QUESTION GENERATION
+// ============================================================
+const MEMORY_THEMES = [
+  // 子供・学校
+  '子供の頃の遊び・秘密基地や探検',
+  '小学校の運動会や学芸会の思い出',
+  '夏休みの宿題や自由研究',
+  '好きだった先生や友達のこと',
+  '通学路で見た景色や出来事',
+  '子供の頃に夢中になった遊びや玩具',
+  // 家族・暮らし
+  '家族みんなで食べた好きな料理',
+  'お母さんやお父さんの口癖や習慣',
+  '兄弟姉妹との思い出やいたずら',
+  '実家の台所や縁側の記憶',
+  '家族旅行や帰省の思い出',
+  'お正月やお盆の家族の集まり',
+  // 仕事・青春
+  '初めて働いた日や最初の仕事場',
+  '若い頃に夢中になった趣味や習い事',
+  '青春時代の恋愛や友情',
+  '職場での忘れられない出来事',
+  '初めてもらったお給料の使い道',
+  '仕事で一番がんばった時期',
+  // 食べ物・季節
+  '子供の頃に食べた懐かしいお菓子',
+  '近所のお気に入りの食べ物屋さん',
+  '季節ごとの行事食や特別な料理',
+  '初めて自分で作った料理',
+  '思い出の味・誰かが作ってくれた食事',
+  // 旅・場所
+  '印象に残っている旅行先や景色',
+  '生まれ育った町や懐かしい場所',
+  '初めて海や山を見たときのこと',
+  '電車やバスで移動した遠い記憶',
+  // 季節・自然
+  'お祭りや縁日の思い出',
+  '雪遊びや台風など自然にまつわる記憶',
+  '桜や紅葉など季節の風景',
+  '夕焼けや星空を眺めた記憶',
+];
+
+// 問いかけのバリエーションを出すための修飾語（ランダムに追加）
+const QUESTION_STYLES = [
+  '具体的な場面・音・匂いなど五感が浮かぶような',
+  '「一番〜」「初めて〜」「忘れられない〜」など特定の瞬間に焦点を当てた',
+  '誰かとの関係性（人物）が浮かぶような',
+  '季節や天気・時間帯が感じられるような',
+  '子供の自分の気持ちや感動が伝わるような',
+  '笑いや温かさが生まれるような軽やかな',
+];
+
+async function generateFirstQuestion() {
+  const playerNames = state.players.map(p => p.name).join('と');
+  const theme = MEMORY_THEMES[Math.floor(Math.random() * MEMORY_THEMES.length)];
+  const style = QUESTION_STYLES[Math.floor(Math.random() * QUESTION_STYLES.length)];
+  const prompt = `あなたは高齢者の方々が思い出を語る場を優しく温かく引き出すファシリテーターです。
+
+参加者：${playerNames}
+今日のテーマ：${theme}
+問いかけのスタイル：${style}問い
+
+最初の問いかけを1〜2文で作ってください。
+条件：
+- 毎回まったく違う表現・切り口で（定型文は使わない）
+- 温かく、懐かしさを引き出す言葉で
+- 急がせず、ゆっくり思い出せるように
+- 「〜ですか？」「〜はどうでしたか？」「〜を覚えていますか？」など柔らかい語尾で
+- 問いかけのみ出力（説明・前置き不要）`;
+  return await callAnthropic(prompt, 150);
+}
+
+async function generateNextQuestion(context) {
+  const style = QUESTION_STYLES[Math.floor(Math.random() * QUESTION_STYLES.length)];
+
+  // 3ターン目かつ未チェックの場合、情報収集を問いに組み込む
+  if (state.totalTurns === 3 && !state.storyContext.checked && state.keys.anthropic) {
+    state.storyContext.checked = true; // 一度だけ実行
+    try {
+      const checkPrompt = `以下の語りから情報を抽出してください。
+
+【語り】
+${context}
+
+以下をJSON形式で返してください（推定できない場合は空文字）：
+{
+  "era": "時代・年齢（例：昭和40年代・子供の頃、中学生の頃など）",
+  "place": "場所・地域（例：九州の農村、東京の下町など）",
+  "characters": "登場人物（例：母・祖母・友人など）",
+  "missing": ["不足している情報名のリスト（era/place/charactersのうち空のもの）"]
+}
+JSONのみ出力（説明不要）。`;
+
+      const raw = await callAnthropic(checkPrompt, 200);
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      const info = JSON.parse(cleaned);
+
+      // 取得できた情報を保存
+      if (info.era) state.storyContext.era = info.era;
+      if (info.place) state.storyContext.place = info.place;
+      if (info.characters) state.storyContext.characters = info.characters;
+
+      // 不足情報があれば問いに自然に組み込む
+      if (info.missing && info.missing.length > 0) {
+        const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+        const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
+        const infoPrompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context}
+
+次の問いかけを1〜2文で作ってください。
+条件：
+- 直前の語りを「そうですか」「それは〜ですね」などで温かく受け止めてから
+- 「${hints}のお話でしたか？」という情報確認を、押しつけず自然な流れで問いに織り込む
+- 前回と同じ表現は使わない
+- 問いかけのみ出力（説明不要）`;
+        state.skipNextImage = true; // 情報収集ターンは絵不要
+        return await callAnthropic(infoPrompt, 150);
+      }
+    } catch(e) {
+      console.warn('storyContext check failed:', e);
+      // 失敗しても通常の問いを続ける
+    }
+  }
+
+  // 通常の問いかけ
+  const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context}
+
+次の問いかけを1〜2文で作ってください。
+条件：
+- 直前の語りの内容を受け止め、「そうですか」「それは〜ですね」「素敵ですね」などで共感してから問いかける
+- 語りをさらに深める問いか、関連する別の思い出へ広げる問い
+- ${style}問いにする
+- 前回と同じ表現・切り口は絶対に繰り返さない（毎回新鮮な問いかけ）
+- 温かく、評価せず、ただ聞きたいという姿勢で
+- 問いかけのみ出力（説明不要）`;
+  return await callAnthropic(prompt, 150);
+}
+
+// 「別の問いかけ」ボタン
+async function refreshQuestion() {
+  if (!state.keys.anthropic) return;
+
+  const btn = document.getElementById('btn-refresh-question');
+  if (btn) btn.disabled = true;
+
+  showAIThinking(true);
+
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('\n');
+
+  // 現在の問いかけを除外して別の問いを生成
+  const currentQ = state.currentQuestion;
+  const prompt = `あなたは高齢者の方々が思い出を語る場を温かく引き出すファシリテーターです。
+
+【これまでの語り】
+${context || '（まだ語りはありません）'}
+
+【直前の問いかけ（これとは違う問いを作ること）】
+「${currentQ}」
+
+上記とは完全に違う切り口・テーマで、新しい問いかけを1〜2文で作ってください。
+条件：
+- 直前の問いとテーマ・表現が重ならないこと
+- 温かく、懐かしさを引き出す言葉で
+- 「〜ですか？」「〜はどうでしたか？」など柔らかい語尾で
+- 問いかけのみ出力（説明不要）`;
+
+  try {
+    const q = await callAnthropic(prompt, 150);
+    state.currentQuestion = q;
+    showAIThinking(false);
+    showAIQuestion(q);
+    // ストーリーログのAI問いかけも更新
+    const bubbles = document.querySelectorAll('#story-panel .ai-turn');
+    if (bubbles.length > 0) {
+      const lastBubble = bubbles[bubbles.length - 1];
+      const textEl = lastBubble.querySelector('.bubble-text');
+      if (textEl) textEl.textContent = q;
+    }
+  } catch(e) {
+    showAIThinking(false);
+    showToast('別の問いかけの生成に失敗しました。もう一度お試しください。');
+  }
+
+  if (btn) btn.disabled = false;
+}
+
+async function generateTitle(context) {
+  const prompt = `以下の語りをもとに、絵本のタイトルを10文字以内で作ってください。
+温かく、懐かしさを感じるタイトル。タイトルのみ出力。
+
+${context}`;
+  return await callAnthropic(prompt, 30);
+}
+
+// ============================================================
+//  GAME FLOW
+// ============================================================
+function updateSpeakerBadge() {
+  const p = state.players[state.currentPlayerIdx];
+  if (!p) return;
+  // 「ちゃん」「くん」「さん」「様」「君」で終わる名前には「さん」をつけない
+  const honorifics = ['ちゃん', 'くん', 'さん', '様', '君', 'どの', '殿'];
+  const needsSan = !honorifics.some(h => p.name.endsWith(h));
+  const displayName = needsSan ? p.name + 'さん' : p.name;
+  document.getElementById('speaker-name').textContent = `${p.avatar} ${displayName}の番`;
+  document.getElementById('speaker-hint').textContent = '上の問いかけに、思い出を話してみてください。押しながら話すか、文字で入力できます。';
+}
+
+function showAIQuestion(text) {
+  document.getElementById('ai-question-box').style.display = 'block';
+  document.getElementById('ai-question-text').textContent = text;
+  // 自動読み上げ（録音中でなければ）
+  // BUG FIX: showAIThinkingが既にpointerEventsを管理しているため
+  //          ここでは読み上げ中のみ一時的に追加無効化し、
+  //          AIThinkingが非表示かつ録音中でない時だけ復旧する
+  if (!state.isRecording) {
+    const ra = document.getElementById('record-area');
+    // 現在showAIThinkingで既に無効化中でない場合のみ追加で無効化
+    if (ra.style.pointerEvents !== 'none') {
+      ra.style.pointerEvents = 'none';
+      ra.style.opacity = '0.5';
+      speakText(text).then(() => {
+        // AIThinkingが非表示かつ録音中でない場合のみ復旧
+        const thinking = document.getElementById('ai-thinking');
+        if (thinking.style.display === 'none' && !state.isRecording) {
+          ra.style.pointerEvents = 'auto';
+          ra.style.opacity = '1';
+        }
+      });
+    } else {
+      // showAIThinkingが管理中→読み上げのみ行い、復旧はshowAIThinkingに任せる
+      speakText(text);
+    }
+  }
+}
+
+function showAIThinking(show) {
+  document.getElementById('ai-thinking').style.display = show ? 'flex' : 'none';
+  const ra = document.getElementById('record-area');
+  ra.style.opacity = show ? '0.4' : '1';
+  ra.style.pointerEvents = show ? 'none' : 'auto';
+}
+
+// ============================================================
+//  VOICE RECORDING
+// ============================================================
+let recogRef = null;
+let waveAnimId = null;
+
+let _mediaRecorder = null;
+let _audioChunks = [];
+let _pendingAudioBlob = null; // 録音完了後のBlob（submitTurn前に一時保存）
+
+function startRecord() {
+  if (state.isRecording) return;
+  state.isRecording = true;
+  state.recognizedText = '';
+  _audioChunks = [];
+  _pendingAudioBlob = null;
+  document.getElementById('recognized-ta').value = '';
+  document.getElementById('recognized-ta').placeholder = '…聞いています…';
+  document.getElementById('btn-send').disabled = true;
+  document.getElementById('record-btn').classList.add('recording');
+  document.getElementById('waveform').classList.add('active');
+
+  // MediaRecorderで音声も録音（テキスト認識と並行）
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    _mediaRecorder = new MediaRecorder(stream);
+    _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+    _mediaRecorder.onstop = () => {
+      _pendingAudioBlob = new Blob(_audioChunks, { type: 'audio/webm' });
+      stream.getTracks().forEach(t => t.stop());
+    };
+    _mediaRecorder.start();
+  }).catch(() => {
+    // マイク取得失敗は無視（テキスト認識のみ続行）
+  });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showToast('音声認識はChromeで使えます。文字入力をお使いください。');
+    stopRecord();
+    return;
+  }
+
+  recogRef = new SR();
+  recogRef.lang = 'ja-JP';
+  recogRef.continuous = true;
+  recogRef.interimResults = true;
+
+  recogRef.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+    state.recognizedText = text;
+    document.getElementById('recognized-ta').value = text;
+    document.getElementById('btn-send').disabled = !text.trim();
+  };
+
+  // BUG FIX: onerrorを適切にハンドリング（マイク拒否でUIが固まらないように）
+  recogRef.onerror = (e) => {
+    console.warn('SR error:', e.error);
+    if (e.error === 'not-allowed') {
+      showToast('マイクの使用が許可されていません。ブラウザの設定を確認してください。');
+    } else if (e.error === 'audio-capture') {
+      showToast('マイクが見つかりません。文字入力をお使いください。');
+    }
+    stopRecord();
+  };
+
+  recogRef.start();
+  animateWave();
+}
+
+function animateWave() {
+  if (!state.isRecording) return;
+  for (let i = 0; i < 5; i++) {
+    document.getElementById('wb' + i).style.height = (4 + Math.random() * 18) + 'px';
+  }
+  waveAnimId = requestAnimationFrame(animateWave);
+}
+
+function stopRecord() {
+  if (!state.isRecording) return;
+  state.isRecording = false;
+  if (recogRef) { try { recogRef.stop(); } catch(e){} recogRef = null; }
+  if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+    try { _mediaRecorder.stop(); } catch(e) {}
+    _mediaRecorder = null;
+  }
+  if (waveAnimId) { cancelAnimationFrame(waveAnimId); waveAnimId = null; }
+  document.getElementById('record-btn').classList.remove('recording');
+  document.getElementById('waveform').classList.remove('active');
+  for (let i = 0; i < 5; i++) document.getElementById('wb' + i).style.height = '4px';
+
+  if (state.recognizedText.trim()) {
+    document.getElementById('recognized-ta').placeholder = '';
+    document.getElementById('btn-send').disabled = false;
+  } else {
+    document.getElementById('recognized-ta').placeholder = 'もう一度お試しください';
+  }
+}
+
+function onTextEdit(val) {
+  state.recognizedText = val.trim();
+  document.getElementById('btn-send').disabled = !val.trim();
+}
+
+function clearInput() {
+  state.recognizedText = '';
+  const ta = document.getElementById('recognized-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  const btnSend = document.getElementById('btn-send');
+  if (btnSend) btnSend.disabled = true;
+}
+
+// BUG FIX: display:flexをclassで正しく管理
+function toggleTextRow() {
+  const wrap = document.getElementById('text-row-wrap');
+  const isVisible = wrap.style.display === 'flex';
+  wrap.style.display = isVisible ? 'none' : 'flex';
+}
+
+function submitFromText() {
+  const val = document.getElementById('text-input').value.trim();
+  if (!val) return;
+  state.recognizedText = val;
+  document.getElementById('text-input').value = '';
+  submitTurn();
+}
+
+// ============================================================
+//  SUBMIT TURN
+// ============================================================
+async function submitTurn() {
+  const text = state.recognizedText.trim();
+  if (!text) return;
+
+  document.getElementById('btn-send').disabled = true;
+
+  // ── テキスト確認ポップアップ ────────────────────────────────
+  const confirmed = await showConfirmTextPopup(text);
+  if (!confirmed.ok) {
+    // 「やり直す」→ 録音状態をリセットして戻る
+    clearInput();
+    document.getElementById('btn-send').disabled = false;
+    return;
+  }
+  // 確認・修正済みのテキストを使用
+  state.recognizedText = confirmed.text;
+  const confirmedText = confirmed.text;
+  // ────────────────────────────────────────────────────────────
+
+  // ── フィルタリング判定 ──────────────────────────────────────
+  // Anthropicキーがある場合のみ判定（ない場合はそのまま通す）
+  if (state.keys.anthropic) {
+    showAIThinking(true);
+    const isNarrative = await isMemoryNarrative(confirmedText);
+    showAIThinking(false);
+
+    if (!isNarrative) {
+      // 語りでない → ユーザーに確認
+      const proceed = await showFilterPopup(confirmedText);
+      if (!proceed) {
+        // スキップ：入力をクリアして次の問いへ進む
+        clearInput();
+        document.getElementById('btn-send').disabled = false;
+        if (state.currentQuestion) {
+          showAIQuestion(state.currentQuestion);
+        }
+        updateSpeakerBadge();
+        return;
+      }
+    }
+  }
+  // ────────────────────────────────────────────────────────────
+
+  const player = state.players[state.currentPlayerIdx];
+  addStoryBubble(player, confirmedText, false);
+
+  // 音声BlobはMediaRecorderのonstopを待ってから取得（最大1秒）
+  await new Promise(resolve => {
+    const deadline = Date.now() + 1000;
+    const check = () => {
+      if (_pendingAudioBlob || Date.now() >= deadline) resolve();
+      else setTimeout(check, 50);
+    };
+    setTimeout(check, 100); // 最低100ms待つ
+  });
+  const turnData = { playerIdx: state.currentPlayerIdx, text: confirmedText, imageUrl: null, audioBlob: _pendingAudioBlob || null };
+  _pendingAudioBlob = null;
+  state.turns.push(turnData);
+  state.totalTurns++;
+
+  clearInput();
+  updateTurnDots();
+
+  if (state.keys.openai) {
+    if (state.skipNextImage) {
+      // 情報収集ターンは絵を生成しない
+      state.skipNextImage = false;
+    } else {
+      enqueueImage(confirmedText, state.turns.length - 1);
+    }
+  }
+
+  // 次のプレイヤーへ
+  state.currentPlayerIdx = (state.currentPlayerIdx + 1) % state.players.length;
+
+  // 規定回数に達したら
+  if (state.totalTurns >= state.maxTurns) {
+    setTimeout(() => document.getElementById('popup-continue').classList.remove('hidden'), 600);
+    return;
+  }
+
+  // AI問いかけ生成
+  showAIThinking(true);
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('\n');
+
+  // BUG FIX: .catch()でフォールバックを確実に実行
+  generateNextQuestion(context)
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      const fallbacks = [
+        'その頃、どんな気持ちでしたか？',
+        'その出来事で一番印象に残っていることは？',
+        '他にも思い出しましたか？',
+        'その後、どうなりましたか？',
+        'その時、一緒にいたのはどんな方でしたか？',
+      ];
+      const q = fallbacks[state.totalTurns % fallbacks.length];
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    });
+}
+
+// ============================================================
+//  STORY LOG
+// ============================================================
+function addStoryBubble(player, text, isAI) {
+  const panel = document.getElementById('story-panel');
+  const div = document.createElement('div');
+  div.className = 'story-bubble' + (isAI ? ' ai-turn' : '');
+  div.innerHTML = `
+    <div class="bubble-speaker">${player.avatar} ${player.name}</div>
+    <div class="bubble-text">${escHtml(text)}</div>`;
+  panel.appendChild(div);
+  panel.scrollTop = panel.scrollHeight;
+}
+
+// ============================================================
+//  TURN DOTS
+// ============================================================
+function buildTurnDots() {
+  const container = document.getElementById('turn-dots');
+  container.innerHTML = '';
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'turn-dot' + (i === 0 ? ' current' : '');
+    dot.id = 'td-' + i;
+    container.appendChild(dot);
+  }
+  document.getElementById('turn-label').textContent = `1/${state.maxTurns}`;
+}
+
+function updateTurnDots() {
+  const n = state.totalTurns;
+  for (let i = 0; i < state.maxTurns; i++) {
+    const dot = document.getElementById('td-' + i);
+    if (!dot) continue;
+    dot.className = 'turn-dot' + (i < n ? ' done' : i === n ? ' current' : '');
+  }
+  document.getElementById('turn-label').textContent = `${Math.min(n+1, state.maxTurns)}/${state.maxTurns}`;
+}
+
+// ============================================================
+//  FINISH / CONTINUE
+// ============================================================
+function confirmFinish() {
+  document.getElementById('popup-finish').classList.remove('hidden');
+}
+
+function hidePopup(id) {
+  document.getElementById(id).classList.add('hidden');
+}
+
+// BUG FIX: continueStory()でAI問いかけも再生成する
+function continueStory() {
+  hidePopup('popup-continue');
+  state.maxTurns += 4;
+  buildTurnDots();
+  // 既存のdoneドットを復元
+  for (let i = 0; i < state.totalTurns; i++) {
+    const dot = document.getElementById('td-' + i);
+    if (dot) dot.className = 'turn-dot done';
+  }
+
+  // 次の問いかけを生成して再提示
+  showAIThinking(true);
+  const context = state.turns.map(t => {
+    const p = state.players[t.playerIdx];
+    return `${p.name}：「${t.text}」`;
+  }).join('\n');
+
+  generateNextQuestion(context)
+    .then(q => {
+      state.currentQuestion = q;
+      showAIThinking(false);
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    })
+    .catch(() => {
+      showAIThinking(false);
+      const q = 'まだ他に話したいことはありますか？';
+      state.currentQuestion = q;
+      showAIQuestion(q);
+      addStoryBubble({ name: 'AI', avatar: '✨' }, q, true);
+      updateSpeakerBadge();
+    });
+}
+
+async function finishStory() {
+  hidePopup('popup-finish');
+  hidePopup('popup-continue');
+
+  const context = state.turns.map(t => t.text).join('\n');
+  try {
+    state.storyTitle = await generateTitle(context);
+  } catch(e) {
+    state.storyTitle = state.players.map(p => p.name).join('と') + 'の思い出';
+  }
+
+  launchFinale();
+}
+
+// ============================================================
+//  IMAGE GENERATION
+// ============================================================
+function enqueueImage(text, turnIdx) {
+  bgGenTotal++;
+  updateGenProgress();
+  document.getElementById('gen-progress').style.display = 'block';
+  imageGenQueue.push({ text, turnIdx });
+  if (!imageGenRunning) processImageQueue();
+}
+
+async function processImageQueue() {
+  imageGenRunning = true;
+  while (imageGenQueue.length > 0) {
+    const { text, turnIdx } = imageGenQueue.shift();
+    try {
+      await generateImage(text, turnIdx);
+    } catch(e) {
+      console.warn('Image gen failed:', e.message);
+    }
+    bgGenCompleted++;
+    updateGenProgress();
+    if (imageGenQueue.length > 0) await sleep(3500);
+  }
+  imageGenRunning = false;
+  if (bgGenCompleted >= bgGenTotal) {
+    setTimeout(() => {
+      const el = document.getElementById('gen-progress');
+      if (el) el.style.display = 'none';
+    }, 2000);
+  }
+}
+
+function updateGenProgress() {
+  const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+  document.getElementById('gen-bar-fill').style.width = pct + '%';
+  document.getElementById('gen-label').textContent =
+    bgGenCompleted >= bgGenTotal ? '絵が完成しました ✓' : `絵を描いています… ${bgGenCompleted}/${bgGenTotal}`;
+}
+
+async function generateImage(text, turnIdx) {
+  const storyContext = state.turns.slice(0, turnIdx + 1).map(t => t.text).join(' ');
+  const narratorGender = state.gender === 'male' ? '男の子' : '女の子';
+  const narratorGenderTeen = state.gender === 'male' ? '男子中学生・高校生' : '女子中学生・高校生';
+  const narratorAdult = state.gender === 'male' ? '老年の男性（語り手の現在の姿・不要なら描かない）' : '老年の女性（語り手の現在の姿・不要なら描かない）';
+
+  // テキストから年齢・年代を推定
+  const ageHint = (() => {
+    if (/幼稚園|保育園|幼い|小さい頃|3歳|4歳|5歳/.test(text)) return '幼児（4〜6歳）';
+    if (/小学|低学年|1年|2年|3年生/.test(text)) return '小学生低学年（7〜9歳）';
+    if (/小学|高学年|4年|5年|6年生/.test(text)) return '小学生高学年（10〜12歳）';
+    if (/中学|13歳|14歳|15歳/.test(text)) return '中学生（13〜15歳）';
+    if (/高校|16歳|17歳|18歳/.test(text)) return '高校生（16〜18歳）';
+    if (/大学|20歳|成人|社会人|就職|仕事/.test(text)) return '青年（20代）';
+    return null;
+  })();
+
+  // 語り手の年齢から各時代の年を動的に計算
+  const currentYear = 2026;
+  const birthYear = currentYear - state.age;
+  const eraHint = (() => {
+    const calcYear = (age) => birthYear + age;
+    const toWareki = (y) => {
+      if (y >= 1989) return `平成${y - 1988}年（${y}年）頃`;
+      if (y >= 1926) return `昭和${y - 1925}年（${y}年）頃`;
+      return `${y}年頃`;
+    };
+    if (/幼稚園|保育園|幼い|小さい頃/.test(text)) {
+      const y = calcYear(5);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/小学/.test(text)) {
+      const y = calcYear(9);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/中学/.test(text)) {
+      const y = calcYear(14);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/高校/.test(text)) {
+      const y = calcYear(17);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/大学/.test(text)) {
+      const y = calcYear(20);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    if (/就職|社会人|仕事/.test(text)) {
+      const y = calcYear(23);
+      return `${toWareki(y)}の日本の風景・服装・生活用品`;
+    }
+    // 時代が不明な場合はおおよその範囲
+    const y1 = calcYear(6); const y2 = calcYear(22);
+    return `${toWareki(y1)}〜${toWareki(y2)}頃の日本の風景・服装・生活用品`;
+  })();
+
+  const ageDesc = ageHint
+    ? `語り手はこの場面では${ageHint}の${narratorGender}として描く`
+    : `語り手はこの場面に応じた年齢の${narratorGender}または${narratorGenderTeen}として描く（現在の老年の姿は不要）`;
+
+  // storyContextから追加情報を組み立て
+  const ctxLines = [];
+  if (state.storyContext.era) ctxLines.push(`- 時代・背景：${state.storyContext.era}`);
+  if (state.storyContext.place) ctxLines.push(`- 場所・地域：${state.storyContext.place}`);
+  if (state.storyContext.characters) ctxLines.push(`- 主な登場人物：${state.storyContext.characters}`);
+  const ctxBlock = ctxLines.length > 0
+    ? `
+【収集済み背景情報（全ての絵に一貫して反映すること）】
+${ctxLines.join('\n')}
+`
+    : '';
+
+  const prompt = `昭和時代の日本の水彩絵本スタイル。温かみのある手描き風、柔らかい色調。
+
+【時代設定】
+${eraHint}の日本の風景・服装・生活用品を忠実に再現する
+${ctxBlock}
+【キャラクター設定（必ず一貫して守ること）】
+- 語り手: ${ageDesc}、黒髪
+- ${narratorAdult}
+- お母さん: 40〜50代の日本人女性、黒髪をまとめている、和やかな表情
+- おばあさん: 70代の日本人女性、白髪、穏やかな笑顔
+- お父さん: 40〜50代の日本人男性、昭和のサラリーマン風
+
+【重要】語り手の現在の老年の姿は、この場面に必要でなければ描かない。子供・青年時代の場面なら子供・青年だけで構成する。
+
+【この場面のテキスト】
+「${text}」
+
+【これまでの文脈】
+「${storyContext.substring(0, 150)}」
+
+【構図の指示】
+- 横長4:3、絵本の1ページ
+- テキストの内容に登場する人物・場面だけを描く
+- 温かく郷愁を感じる情景
+- 絶対禁止: 画像内に文字・テキスト・数字・記号を一切含めないこと。pure illustration only, no text whatsoever.`;
+
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${state.keys.openai}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-image-1',
+      prompt,
+      n: 1,
+      size: '1536x1024',
+      quality: 'medium',
+    }),
+  });
+
+  if (!res.ok) throw new Error(await res.text());
+
+  const data = await res.json();
+  const imgData = data.data?.[0];
+  if (imgData) {
+    const src = imgData.b64_json
+      ? `data:image/png;base64,${imgData.b64_json}`
+      : imgData.url;
+    if (src) state.turns[turnIdx].imageUrl = src;
+  }
+}
+
+// ============================================================
+//  FINALE
+// ============================================================
+async function launchFinale() {
+  if (bgGenTotal > 0 && bgGenCompleted < bgGenTotal) {
+    showScreen('waiting');
+    await new Promise(resolve => {
+      const checkId = setInterval(() => {
+        const pct = bgGenTotal > 0 ? Math.round((bgGenCompleted / bgGenTotal) * 100) : 0;
+        document.getElementById('waiting-fill').style.width = pct + '%';
+        document.getElementById('waiting-count').textContent = `${bgGenCompleted} / ${bgGenTotal} 枚完成`;
+        if (bgGenCompleted >= bgGenTotal) {
+          clearInterval(checkId);
+          window._waitingCheckId = null;
+          resolve();
+        }
+      }, 500);
+      window._waitingResolve = resolve;
+      window._waitingCheckId = checkId;
+    });
+  }
+
+  buildFinaleDots();
+  buildSceneGrid();
+  document.getElementById('finale-title-text').textContent = state.storyTitle || '思い出の絵本';
+  gotoSlide(0);
+  showScreen('finale');
+}
+
+function skipWaiting() {
+  if (window._waitingCheckId) { clearInterval(window._waitingCheckId); window._waitingCheckId = null; }
+  if (window._waitingResolve) { window._waitingResolve(); window._waitingResolve = null; }
+}
+
+function buildFinaleDots() {
+  const container = document.getElementById('finale-dots');
+  container.innerHTML = '';
+  state.turns.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'finale-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => gotoSlide(i);
+    container.appendChild(dot);
+  });
+  document.getElementById('slide-counter').textContent = `1 / ${state.turns.length}`;
+}
+
+function buildSceneGrid() {
+  const grid = document.getElementById('scene-grid');
+  grid.innerHTML = '';
+  state.turns.forEach((turn, i) => {
+    const item = document.createElement('div');
+    item.className = 'grid-item';
+    item.onclick = () => gotoSlide(i);
+    const shortText = turn.text.length > 28 ? turn.text.slice(0, 28) + '…' : turn.text;
+    item.innerHTML =
+      `<span class="grid-num">${i+1}</span>` +
+      (turn.imageUrl
+        ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">`
+        : `<div class="grid-no-img">📖</div>`) +
+      `<div class="grid-text">${escHtml(shortText)}</div>`;
+    grid.appendChild(item);
+  });
+}
+
+function gotoSlide(idx) {
+  if (idx < 0 || idx >= state.turns.length) return;
+  currentSlide = idx;
+  const turn = state.turns[idx];
+  const img = document.getElementById('finale-img');
+  const noImg = document.getElementById('finale-no-img');
+  if (turn.imageUrl) {
+    img.src = turn.imageUrl;
+    img.style.display = 'block';
+    noImg.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    noImg.style.display = 'flex';
+  }
+  document.getElementById('finale-text').textContent = turn.text;
+  document.getElementById('slide-counter').textContent = `${idx+1} / ${state.turns.length}`;
+  document.querySelectorAll('.finale-dot').forEach((d, i) => d.classList.toggle('active', i === idx));
+}
+
+// ============================================================
+//  PLAYBACK
+// ============================================================
+// 絵本用：昔ばなし口調に変換してから読み上げる
+// 読み上げ前にClaudeで句読点だけ追加（言葉は一切変えない）
+async function addPunctuation(text) {
+  if (!state.keys.anthropic) return text;
+  try {
+    const prompt = `以下のテキストに、句読点（。、）だけを適切な位置に追加してください。
+
+厳守事項：
+- 言葉・単語・表現は一切変えない
+- 追加してよいのは「。」「、」「…」のみ
+- 文の終わりには「。」、自然な区切りには「、」を入れる
+- 句読点が既にある場合はそのまま残す
+- 変換後のテキストのみ出力（説明・前置き不要）
+
+テキスト：${text}`;
+    const result = await callAnthropic(prompt, 400);
+    return result.trim();
+  } catch(e) {
+    console.warn('punctuation failed, using original');
+    return text;
+  }
+}
+
+// テキストをそのまま読み上げ（言葉は変えない・声質とスピードだけ調整）
+async function speakStoryText(text) {
+  if (!isPlaying) return;
+  // 句読点を追加してからSSMLに渡す
+  const punctuated = await addPunctuation(text);
+  if (!isPlaying) return; // 追加処理中に停止された場合
+  await speakTextWithVoice(punctuated, 'story');
+}
+
+function playbackAll() {
+  // 再生中なら停止
+  if (isPlaying) {
+    isPlaying = false;
+    stopCurrentSpeech();
+    stopUserAudio();
+    document.getElementById('btn-play').textContent = '▶ 再生する';
+    return;
+  }
+  // 声の選択ポップアップを表示
+  document.getElementById('popup-voice-select').classList.remove('hidden');
+}
+
+let _userAudio = null;
+function stopUserAudio() {
+  if (_userAudio) { try { _userAudio.pause(); _userAudio.src = ''; } catch(e) {} _userAudio = null; }
+}
+
+async function startPlaybackWithVoice(mode) {
+  hidePopup('popup-voice-select');
+  state.playbackMode = mode;
+  isPlaying = true;
+  document.getElementById('btn-play').textContent = '⏹ 停止';
+
+  for (let i = 0; i < state.turns.length; i++) {
+    if (!isPlaying) break;
+    gotoSlide(i);
+    const turn = state.turns[i];
+
+    if (mode === 'user') {
+      if (turn.audioBlob) {
+        // じぶんの声：録音したBlobをそのまま再生
+        await playUserAudio(turn.audioBlob);
+      } else {
+        // 録音がない場合は無音でスライドだけ表示（AI音声にフォールバックしない）
+        await sleep(2000);
+      }
+    } else {
+      // AIの声：テキストをそのまま読み上げ（変換なし）
+      await speakStoryText(turn.text);
+    }
+    await sleep(1200);
+  }
+
+  isPlaying = false;
+  document.getElementById('btn-play').textContent = '▶ 再生する';
+}
+
+async function playUserAudio(blob) {
+  return new Promise(resolve => {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _userAudio = audio;
+    audio.onended = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+    audio.onerror = () => { URL.revokeObjectURL(url); _userAudio = null; resolve(); };
+    audio.play().catch(() => resolve());
+  });
+}
+
+// ── 音声再生管理 ─────────────────────────────────────────────────
+let _ttsAudioCtx = null;   // 現在のAudioContext（Google TTS用）
+let _ttsAudioSrc = null;   // 現在のBufferSourceNode
+let _ttsResolve = null;    // 現在の再生Promiseのresolve
+
+// 再生中の音声を即座に停止する
+function stopCurrentSpeech() {
+  // Google TTS停止
+  if (_ttsAudioSrc) {
+    try { _ttsAudioSrc.onended = null; _ttsAudioSrc.stop(); } catch(e) {}
+    _ttsAudioSrc = null;
+  }
+  if (_ttsAudioCtx) {
+    try { _ttsAudioCtx.close(); } catch(e) {}
+    _ttsAudioCtx = null;
+  }
+  // ブラウザTTS停止
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  // 保留中のresolveを呼んで詰まりを解消
+  if (_ttsResolve) { _ttsResolve(); _ttsResolve = null; }
+}
+
+// mode: 'question'（AIの問いかけ）| 'story'（絵本読み上げ）
+// story時は性別・年齢に合った声＋ゆっくりめに
+function getTTSVoiceConfig(mode) {
+  if (mode === 'story') {
+    const isElderly = state.age >= 60;
+    if (state.gender === 'male') {
+      return {
+        name: isElderly ? 'ja-JP-Neural2-C' : 'ja-JP-Neural2-D',
+        ssmlGender: 'MALE',
+        speakingRate: 0.72,   // ゆっくり・温かく
+        pitch: isElderly ? -2.0 : 0.0,
+        useSSML: true,        // 句読点で間を空けるSSML使用
+      };
+    } else {
+      return {
+        name: isElderly ? 'ja-JP-Neural2-B' : 'ja-JP-Neural2-A',
+        ssmlGender: 'FEMALE',
+        speakingRate: 0.72,
+        pitch: isElderly ? -1.0 : 0.0,
+        useSSML: true,
+      };
+    }
+  }
+  return {
+    name: 'ja-JP-Neural2-B',
+    ssmlGender: 'FEMALE',
+    speakingRate: 0.90,
+    pitch: 0.0,
+    useSSML: false,
+  };
+}
+
+// テキストをSSML形式に変換（句読点に長めのbreakを挿入）
+function textToSSML(text) {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  // 句読点・読点・感嘆符・疑問符の後に間を挿入
+  const withBreaks = escaped
+    .replace(/。/g, '。<break time="800ms"/>')
+    .replace(/、/g, '、<break time="400ms"/>')
+    .replace(/！/g, '！<break time="600ms"/>')
+    .replace(/？/g, '？<break time="600ms"/>')
+    .replace(/…/g, '<break time="700ms"/>');
+  return `<speak>${withBreaks}</speak>`;
+}
+
+// mode省略時は 'question' 扱い
+async function speakTextWithVoice(text, mode = 'question') {
+  stopCurrentSpeech();
+
+  if (state.keys.google) {
+    const voiceConfig = getTTSVoiceConfig(mode);
+    try {
+      const res = await fetch(
+        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${state.keys.google}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: voiceConfig.useSSML ? { ssml: textToSSML(text) } : { text },
+            voice: {
+              languageCode: 'ja-JP',
+              name: voiceConfig.name,
+              ssmlGender: voiceConfig.ssmlGender,
+            },
+            audioConfig: {
+              audioEncoding: 'MP3',
+              speakingRate: voiceConfig.speakingRate,
+              pitch: voiceConfig.pitch,
+            }
+          })
+        }
+      );
+      if (!res.ok) throw new Error('Google TTS failed: ' + res.status);
+      const data = await res.json();
+      const binary = atob(data.audioContent);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      _ttsAudioCtx = audioCtx;
+      const decoded = await audioCtx.decodeAudioData(bytes.buffer);
+      const src = audioCtx.createBufferSource();
+      _ttsAudioSrc = src;
+      src.buffer = decoded;
+      src.connect(audioCtx.destination);
+
+      return new Promise(resolve => {
+        _ttsResolve = resolve;
+        src.onended = () => {
+          try { audioCtx.close(); } catch(e) {}
+          if (_ttsAudioCtx === audioCtx) _ttsAudioCtx = null;
+          if (_ttsAudioSrc === src) _ttsAudioSrc = null;
+          _ttsResolve = null;
+          resolve();
+        };
+        src.start(0);
+      });
+    } catch(e) {
+      console.warn('Google TTS error, falling back to browser TTS:', e);
+      _ttsAudioCtx = null;
+      _ttsAudioSrc = null;
+    }
+  }
+
+  // フォールバック：ブラウザ内蔵 SpeechSynthesis
+  const fallbackRate = mode === 'story' ? 0.72 : 0.82;
+  return new Promise(resolve => {
+    if (!('speechSynthesis' in window)) { resolve(); return; }
+    window.speechSynthesis.cancel();
+    _ttsResolve = resolve;
+
+    const doSpeak = () => {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ja-JP';
+      utter.rate = fallbackRate;
+      utter.pitch = 1.0;
+      const voices = window.speechSynthesis.getVoices();
+      const jaVoice = voices.find(v => v.lang.startsWith('ja'));
+      if (jaVoice) utter.voice = jaVoice;
+      utter.onend = () => { _ttsResolve = null; resolve(); };
+      utter.onerror = () => { _ttsResolve = null; resolve(); };
+      window.speechSynthesis.speak(utter);
+    };
+
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+      doSpeak();
+    } else {
+      window.speechSynthesis.onvoiceschanged = () => { doSpeak(); };
+      setTimeout(doSpeak, 2000);
+    }
+  });
+}
+
+// 後方互換：speakText は問いかけ用（'question'モード）のラッパー
+function speakText(text) {
+  return speakTextWithVoice(text, 'question');
+}
+
+// ============================================================
+//  PRINT
+// ============================================================
+function printStory() {
+  let html = `<!DOCTYPE html><html lang="ja"><head><meta charset="UTF-8">
+<title>${escHtml(state.storyTitle || '思い出の絵本')}</title>
+<style>
+body{font-family:'Noto Serif JP',serif;background:white;color:#2a231a;max-width:800px;margin:0 auto;padding:20px;}
+h1{font-size:28px;text-align:center;color:#b5392a;margin-bottom:8px;letter-spacing:0.12em;}
+.subtitle{text-align:center;color:#5c4f3a;font-size:16px;margin-bottom:30px;letter-spacing:0.1em;}
+.scene{page-break-inside:avoid;margin-bottom:32px;border:1px solid #e4d9c8;padding:0 0 16px;}
+.scene img{width:100%;display:block;}
+.scene-no-img{width:100%;height:180px;background:#f0e9db;display:flex;align-items:center;justify-content:center;font-size:40px;}
+.scene-text{padding:18px 22px;font-size:20px;line-height:2.0;}
+.scene-num{font-size:14px;color:#5c4f3a;padding:12px 22px 0;letter-spacing:0.08em;}
+footer{text-align:center;font-size:14px;color:#5c4f3a;margin-top:40px;border-top:1px solid #e4d9c8;padding-top:16px;}
+@media print{body{max-width:none;}}
+</style></head><body>
+<h1>${escHtml(state.storyTitle || '思い出の絵本')}</h1>
+<div class="subtitle">${escHtml(state.players.map(p => p.name).join('　'))}の思い出</div>`;
+
+  state.turns.forEach((turn, i) => {
+    html += `<div class="scene">
+<div class="scene-num">— ${i+1} —</div>
+${turn.imageUrl ? `<img src="${turn.imageUrl}" alt="シーン${i+1}">` : '<div class="scene-no-img">📖</div>'}
+<div class="scene-text">${escHtml(turn.text)}</div>
+</div>`;
+  });
+
+  html += `<footer>えほんシニア — ${new Date().toLocaleDateString('ja-JP')} 作成</footer></body></html>`;
+
+  // BUG FIX: window.openがnullを返す場合（ポップアップブロック）のガード
+  const win = window.open('', '_blank');
+  if (!win) {
+    showToast('ポップアップがブロックされました。ブラウザの設定で許可してください。');
+    return;
+  }
+  win.document.write(html);
+  win.document.close();
+  win.onload = () => { try { win.print(); } catch(e) {} };
+}
+
+// ============================================================
+//  RESET
+// ============================================================
+function resetAll() {
+  if (isPlaying) { isPlaying = false; }
+  stopCurrentSpeech();
+  stopUserAudio();
+  _pendingAudioBlob = null;
+  // BUG FIX: 残留Promiseをクリア（誤作動防止）
+  if (_confirmResolve) { _confirmResolve({ ok: false, text: '' }); _confirmResolve = null; }
+  if (_filterResolve) { _filterResolve(false); _filterResolve = null; }
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  document.getElementById('popup-filter').classList.add('hidden');
+  state.turns = [];
+  state.totalTurns = 0;
+  state.maxTurns = 8;
+  state.currentPlayerIdx = 0;
+  state.recognizedText = '';
+  state.currentQuestion = '';
+  state.storyTitle = '';
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
+  bgGenCompleted = 0;
+  bgGenTotal = 0;
+  imageGenQueue.length = 0;
+  imageGenRunning = false;
+  showScreen('title');
+}
+
+// ============================================================
+//  FILTERING
+// ============================================================
+async function isMemoryNarrative(text) {
+  // 短すぎるテキストや明らかな非語りは即座に判定
+  const trimmed = text.trim();
+  const skipPatterns = [
+    /^(覚えていない|覚えてない|わからない|わかりません|ないです|ないかな|ないね|ないなあ|特にない|思い出せない|忘れた|忘れました)[\s。、！？]*$/,
+    /^(そうですね|そうかな|うーん|ええと|えーと|はい|いいえ|そう|なるほど|ああ|あー|うん|そっか)[\s。、！？]*$/,
+    /^.{1,8}$/, // 8文字以下は非語りの可能性が高い
+  ];
+  for (const pat of skipPatterns) {
+    if (pat.test(trimmed)) return false;
+  }
+
+  // AIで判定（短い問い合わせ）
+  try {
+    const prompt = `以下のテキストは「思い出・体験・エピソードの語り」ですか？それとも質問への返答・相槌・「覚えていない」などの非語りですか？
+
+テキスト：「${text}」
+
+判定基準：
+- 語り：具体的な出来事・場所・人物・感情・行動が含まれる（例：「小学校の運動会で転んだ」「母がよく作ってくれた煮物が好きだった」）
+- 非語り：「覚えていない」「わからない」「そうですね」「特にない」などの返答・相槌・否定
+
+「語り」なら yes、「非語り」なら no とだけ答えてください。`;
+    const result = await callAnthropic(prompt, 10);
+    return result.toLowerCase().includes('yes');
+  } catch(e) {
+    // API失敗時は語りとして扱う（スキップしない）
+    return true;
+  }
+}
+
+// ============================================================
+//  TEXT CONFIRM POPUP（送信前テキスト確認）
+// ============================================================
+let _confirmResolve = null;
+
+function showConfirmTextPopup(text) {
+  // 表示モードで開く
+  document.getElementById('confirm-text-display').textContent = text;
+  document.getElementById('confirm-textarea').value = text;
+  document.getElementById('confirm-edit-area').classList.remove('visible');
+  document.getElementById('confirm-btn-edit').textContent = '✏️ 　修正する';
+
+  document.getElementById('popup-confirm-text').classList.remove('hidden');
+  return new Promise(resolve => { _confirmResolve = resolve; });
+}
+
+function confirmTextOK() {
+  // 編集モードの場合は編集後のテキストを使う
+  const editArea = document.getElementById('confirm-edit-area');
+  let finalText;
+  if (editArea.classList.contains('visible')) {
+    finalText = document.getElementById('confirm-textarea').value.trim();
+    if (!finalText) return; // 空は送れない
+  } else {
+    finalText = document.getElementById('confirm-text-display').textContent;
+  }
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  if (_confirmResolve) { _confirmResolve({ ok: true, text: finalText }); _confirmResolve = null; }
+}
+
+function confirmTextEdit() {
+  const editArea = document.getElementById('confirm-edit-area');
+  const btn = document.getElementById('confirm-btn-edit');
+  if (!editArea.classList.contains('visible')) {
+    // 編集モードに切り替え
+    editArea.classList.add('visible');
+    btn.textContent = '✓ 　修正完了';
+    document.getElementById('confirm-textarea').focus();
+    // カーソルを末尾に
+    const ta = document.getElementById('confirm-textarea');
+    ta.selectionStart = ta.selectionEnd = ta.value.length;
+  } else {
+    // 「修正完了」ボタンとして機能 → OKと同じ
+    confirmTextOK();
+  }
+}
+
+function confirmTextCancel() {
+  document.getElementById('popup-confirm-text').classList.add('hidden');
+  // BUG FIX: やり直し時に古いテキストをクリア
+  state.recognizedText = '';
+  const ta = document.getElementById('recognized-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  if (_confirmResolve) { _confirmResolve({ ok: false, text: '' }); _confirmResolve = null; }
+}
+
+// フィルタリングポップアップのコールバック
+let _filterResolve = null;
+
+function filterProceed() {
+  hidePopup('popup-filter');
+  if (_filterResolve) { _filterResolve(true); _filterResolve = null; }
+}
+
+function filterSkip() {
+  hidePopup('popup-filter');
+  if (_filterResolve) { _filterResolve(false); _filterResolve = null; }
+}
+
+function showFilterPopup(text) {
+  const short = text.length > 40 ? text.slice(0, 40) + '…' : text;
+  document.getElementById('filter-text').textContent = `「${short}」
+
+この内容は絵本のページにしますか？`;
+  document.getElementById('popup-filter').classList.remove('hidden');
+  return new Promise(resolve => { _filterResolve = resolve; });
+}
+
+// ============================================================
+//  YES AND LOGIC
+// ============================================================
+const YA_MODE_CONFIG = {
+  anokoro: {
+    badge: 'あのころ話（つづきをどうぞ）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}（${birthYear}年生まれ）が懐かしく思える「あのころ話」のお題を1つ作ってください。その世代が10〜30代だった頃（${birthYear+10}〜${birthYear+30}年頃）の具体的な出来事・文化・生活から。例：「白黒テレビが来た日のこと」「学校の給食で出た懐かしいメニュー」お題のみ出力（説明不要）。`,
+    aiPrompt: (topic, log) => `あなたは「あのころ話」のYes ANDの相手です。お題「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「はい、そうですね」「そうだねえ」などで受けてから同じ時代の記憶を1つ足す。短くテンポよく。返答のみ出力。`,
+    finishTitle: 'あのころ話、おわり',
+  },
+  mirai: {
+    badge: '未来話（そうなったらいいね）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}が「そうなったらいいな」と思える未来の話題を1つ作ってください。例：「孫と一緒にできること」「老後にやってみたいこと」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「未来話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうなったらいいですね」などで受けてから希望を一緒に広げる。短く温かく。返答のみ出力。`,
+    finishTitle: '未来話、おわり',
+  },
+  moshimo: {
+    badge: 'もしも話（あの時こうしていたら）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}の人生で「もしあの時こうしていたら」と思えそうな話題を1つ作ってください。例：「もし違う仕事を選んでいたら」「もしあの旅に行っていたら」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「もしも話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうですね、もしそうだったら」などで受けて楽しい空想として広げる。短く。返答のみ出力。`,
+    finishTitle: 'もしも話、おわり',
+  },
+  kansha: {
+    badge: '感謝話（ありがとうを伝えたい人へ）',
+    topicPrompt: (age, gender, birthYear) => `${age}歳の${gender === 'male' ? '男性' : '女性'}が「ありがとうと言いたい人」について話すきっかけになるお題を1つ作ってください。例：「人生で一番お世話になった人のこと」「今でも感謝している誰かの言葉」お題のみ出力。`,
+    aiPrompt: (topic, log) => `あなたは「感謝話」のYes ANDの相手です。テーマ「${topic}」で話しています。
+【これまでの会話】
+${log}
+直前の発言をYes ANDで受けて1〜2文で返してください。「そうですね、その方は」などで温かく受けてから感謝の記憶をさらに引き出す。短く静かに。返答のみ出力。`,
+    finishTitle: '感謝話、おわり',
+  },
+};
+
+async function startYesAnd(mode) {
+  state.players = [];
+  for (let i = 0; i < state.memberCount; i++) {
+    const inp = document.getElementById('name-' + i);
+    state.players.push({ name: inp?.value.trim() || ('参加者' + (i+1)), avatar: AVATARS[i] });
+  }
+  ya.mode = mode;
+  ya.turns = [];
+  ya.currentPlayerIdx = 0;
+  ya.players = state.players;
+  ya.topic = '';
+  ya.topicLocked = false;
+  ya.recognizedText = '';
+  ya.generating = false;
+  ya.skipNextTurnImage = false;
+  ya.usedTopics = []; // セッション中に出たお題の除外リスト
+
+  const cfg = YA_MODE_CONFIG[mode];
+  document.getElementById('yesand-mode-badge').textContent = cfg.badge;
+  document.getElementById('yesand-log').innerHTML = '';
+  document.getElementById('yesand-topic-text').textContent = '考えています…';
+  document.getElementById('own-topic-wrap').style.display = 'none';
+  document.getElementById('yesand-topic-box').style.display = 'block';
+  yaClearInput();
+  showScreen('yesand');
+  yaUpdateTurnBadge();
+  await generateTopic();
+}
+
+// モードごとのカテゴリーリスト
+const YA_TOPIC_CATEGORIES = {
+  anokoro: [
+    '食べ物・料理・お菓子', '乗り物・交通（汽車・路面電車・オート三輪）',
+    '学校・勉強・給食・先生', '遊び・おもちゃ・外遊び',
+    'テレビ・ラジオ・映画・流行歌', '季節の行事・お祭り・縁日',
+    'スポーツ・運動会・プール', '家族の暮らし・台所・風呂',
+    '仕事・職場・初めての給料', '恋愛・青春・友情',
+    '自然・田舎・山や川', '買い物・商店街・市場',
+    '音楽・楽器・ダンス', '旅行・修学旅行・遠足',
+    '流行したもの・はやり言葉', '近所・隣人・地域の思い出',
+  ],
+  mirai: [
+    '孫・子供・若い世代との時間', '旅行・行ってみたい場所',
+    '趣味・やってみたいこと', '食べ物・料理・食卓',
+    '健康・長生き・体のこと', '住まい・暮らし方',
+    '仕事・社会への関わり', '友人・仲間との時間',
+    'テクノロジー・AI・便利な未来', '地球・自然・環境',
+  ],
+  moshimo: [
+    '仕事・職業の選択', '住む場所・引越し',
+    '学校・進学の選択', '恋愛・結婚のif',
+    '趣味・やり続けたこと', '旅行・行かなかった場所',
+    '友人・出会いのif', '家族との関係',
+    'お金・投資・節約', '健康・体のケア',
+  ],
+  kansha: [
+    '親・父母への感謝', '先生・恩師への感謝',
+    '友人・親友への感謝', '職場の上司・同僚への感謝',
+    '配偶者・パートナーへの感謝', '子供・孫への感謝',
+    '近所の人・地域の人への感謝', '見知らぬ人からもらった親切',
+    '言葉・一言で変わった出来事', '支えてくれた誰かへの感謝',
+  ],
+};
+
+async function generateTopic(excludeList) {
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  const birthYear = 2026 - state.age;
+  const genderStr = state.gender === 'male' ? '男性' : '女性';
+
+  // カテゴリーをランダムに選ぶ（バリエーション確保）
+  const categories = YA_TOPIC_CATEGORIES[ya.mode] || [];
+  const cat = categories.length > 0
+    ? categories[Math.floor(Math.random() * categories.length)]
+    : '';
+
+  // 除外リスト（セッション中に出たお題を全て除外）
+  const excludes = excludeList || ya.usedTopics || [];
+  const excludeNote = excludes.length > 0
+    ? '\n\n以下のお題は絶対に使わないこと（既出）：\n' + excludes.map(t => '・' + t).join('\n')
+    : '';
+
+  let prompt = cfg.topicPrompt(state.age, state.gender, birthYear);
+  if (cat) prompt += '\n\n今回は特に「' + cat + '」に関連したお題にしてください。';
+  prompt += excludeNote;
+
+  document.getElementById('yesand-topic-text').textContent = '考えています…';
+  try {
+    const topic = await callAnthropic(prompt, 80);
+    const trimmed = topic.trim();
+    ya.topic = trimmed;
+    ya.usedTopics.push(trimmed); // 使ったお題を記録
+    document.getElementById('yesand-topic-text').textContent = trimmed;
+  } catch(e) {
+    document.getElementById('yesand-topic-text').textContent = 'お題の生成に失敗しました。自分で入力してください。';
+  }
+}
+
+async function refreshTopic() {
+  if (ya.topicLocked) return;
+  await generateTopic(); // usedTopicsが自動で除外リストとして使われる
+}
+
+function toggleOwnTopic() {
+  const wrap = document.getElementById('own-topic-wrap');
+  wrap.style.display = wrap.style.display === 'none' ? 'flex' : 'none';
+}
+
+function setOwnTopic() {
+  const val = document.getElementById('own-topic-input').value.trim();
+  if (!val) return;
+  ya.topic = val;
+  document.getElementById('yesand-topic-text').textContent = val;
+  document.getElementById('own-topic-wrap').style.display = 'none';
+}
+
+function yaUpdateTurnBadge() {
+  if (ya.topicLocked) {
+    const p = ya.players[ya.currentPlayerIdx];
+    if (!p) return;
+    const honorifics = ['ちゃん','くん','さん','様','君','どの','殿'];
+    const needsSan = !honorifics.some(h => p.name.endsWith(h));
+    const displayName = needsSan ? p.name + 'さん' : p.name;
+    document.getElementById('yesand-turn-name').textContent = p.avatar + ' ' + displayName + 'の番';
+    document.getElementById('yesand-turn-hint').textContent = '「はい、そして…」で続けてみてください。押しながら話すか、文字で入力できます。';
+  } else {
+    document.getElementById('yesand-turn-name').textContent = '🎯 お題を確認してください';
+    document.getElementById('yesand-turn-hint').textContent = 'このお題で話を始めます。録音か文字入力でスタート。';
+  }
+}
+
+function yaLockTopicAndStart() {
+  ya.topicLocked = true;
+  document.getElementById('yesand-topic-box').style.display = 'none';
+  yaAddBubble('🎯 お題', ya.topic, 'topic');
+  yaUpdateTurnBadge();
+}
+
+let yaRecogRef = null;
+let yaWaveAnimId = null;
+
+function yaStartRecord() {
+  if (ya.isRecording || ya.generating) return;
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  ya.isRecording = true;
+  ya.recognizedText = '';
+  document.getElementById('yesand-ta').value = '';
+  document.getElementById('yesand-ta').placeholder = '…聞いています…';
+  document.getElementById('yesand-send-btn').disabled = true;
+  document.getElementById('yesand-record-btn').classList.add('recording');
+  document.getElementById('yesand-waveform').classList.add('active');
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('音声認識はChromeで使えます。文字入力をお使いください。'); yaStopRecord(); return; }
+  yaRecogRef = new SR();
+  yaRecogRef.lang = 'ja-JP'; yaRecogRef.continuous = true; yaRecogRef.interimResults = true;
+  yaRecogRef.onresult = (e) => {
+    let text = '';
+    for (let i = 0; i < e.results.length; i++) text += e.results[i][0].transcript;
+    ya.recognizedText = text;
+    document.getElementById('yesand-ta').value = text;
+    document.getElementById('yesand-send-btn').disabled = !text.trim();
+  };
+  yaRecogRef.onerror = () => yaStopRecord();
+  yaRecogRef.start();
+  yaAnimWave();
+}
+
+function yaAnimWave() {
+  if (!ya.isRecording) return;
+  for (let i = 0; i < 5; i++) document.getElementById('yw' + i).style.height = (4 + Math.random() * 18) + 'px';
+  yaWaveAnimId = requestAnimationFrame(yaAnimWave);
+}
+
+function yaStopRecord() {
+  if (!ya.isRecording) return;
+  ya.isRecording = false;
+  if (yaRecogRef) { try { yaRecogRef.stop(); } catch(e){} yaRecogRef = null; }
+  if (yaWaveAnimId) { cancelAnimationFrame(yaWaveAnimId); yaWaveAnimId = null; }
+  document.getElementById('yesand-record-btn').classList.remove('recording');
+  document.getElementById('yesand-waveform').classList.remove('active');
+  for (let i = 0; i < 5; i++) document.getElementById('yw' + i).style.height = '4px';
+  // BUG FIX: mouseup と touchend の両方が発火する場合に備えて少し待つ
+  setTimeout(() => {
+    if (ya.recognizedText.trim()) {
+      document.getElementById('yesand-ta').placeholder = '';
+      document.getElementById('yesand-send-btn').disabled = false;
+    } else {
+      document.getElementById('yesand-ta').placeholder = 'もう一度お試しください';
+    }
+  }, 100);
+}
+
+function yaOnTextEdit(val) {
+  ya.recognizedText = val.trim();
+  document.getElementById('yesand-send-btn').disabled = !val.trim();
+}
+
+function yaClearInput() {
+  ya.recognizedText = '';
+  const ta = document.getElementById('yesand-ta');
+  if (ta) { ta.value = ''; ta.placeholder = 'ここに話した言葉が出ます'; }
+  const btn = document.getElementById('yesand-send-btn');
+  if (btn) btn.disabled = true;
+}
+
+function yaToggleText() {
+  const wrap = document.getElementById('yesand-text-wrap');
+  wrap.style.display = wrap.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function yaSubmitFromText() {
+  const val = document.getElementById('yesand-text-input').value.trim();
+  if (!val) return;
+  ya.recognizedText = val;
+  document.getElementById('yesand-text-input').value = '';
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  yaSubmitTurn();
+}
+
+async function yaSubmitTurn() {
+  const text = ya.recognizedText.trim();
+  if (!text || ya.generating) return;
+  if (!ya.topicLocked) yaLockTopicAndStart();
+  document.getElementById('yesand-send-btn').disabled = true;
+  yaClearInput();
+  const p = ya.players[ya.currentPlayerIdx];
+  yaAddBubble(p.avatar + ' ' + p.name, text, 'user');
+  const skipImg = ya.skipNextTurnImage || false;
+  ya.skipNextTurnImage = false;
+  ya.turns.push({ who: p.name, text, isAI: false, skipImage: skipImg });
+  ya.currentPlayerIdx = (ya.currentPlayerIdx + 1) % ya.players.length;
+  if (ya.players.length === 1) {
+    await yaAITurn();
+  } else {
+    yaUpdateTurnBadge();
+    document.getElementById('yesand-send-btn').disabled = false;
+  }
+}
+
+async function yaAITurn() {
+  ya.generating = true;
+  const ra = document.getElementById('yesand-record-area');
+  ra.style.opacity = '0.4'; ra.style.pointerEvents = 'none';
+  document.getElementById('yesand-thinking').style.display = 'flex';
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  const userTurns = ya.turns.filter(t => !t.isAI);
+  const log = ya.turns.map(t => t.who + '：「' + t.text + '」').join('\n');
+  try {
+    let reply;
+    // 3ターン目（ユーザー3回目）かつ1人モードかつ未チェックの場合、情報収集
+    if (userTurns.length === 3 && ya.players.length === 1 && !state.storyContext.checked && state.keys.anthropic) {
+      state.storyContext.checked = true;
+      try {
+        const checkPrompt = '以下の会話から情報を抽出してください。\n\n【会話】\n' + log + '\n\n以下をJSON形式で返してください（推定できない場合は空文字）：\n{\n  "era": "時代・年齢（例：昭和40年代・中学生の頃など）",\n  "place": "場所・地域（例：富山・東京の下町など）",\n  "characters": "登場人物（例：母の弟・みつるさんなど）",\n  "missing": ["不足している情報名（era/place/charactersのうち推定できないもの）"]\n}\nJSONのみ出力（説明不要）。';
+        const raw = await callAnthropic(checkPrompt, 200);
+        const cleaned = raw.replace(/[`][`][`]json|[`][`][`]/g, '').trim();
+        const info = JSON.parse(cleaned);
+        if (info.era) state.storyContext.era = info.era;
+        if (info.place) state.storyContext.place = info.place;
+        if (info.characters) state.storyContext.characters = info.characters;
+        if (info.missing && info.missing.length > 0) {
+          const missingLabels = { era: 'いつ頃', place: 'どんな場所', characters: '誰と' };
+          const hints = info.missing.map(k => missingLabels[k]).filter(Boolean).join('・');
+          const infoPrompt = cfg.aiPrompt(ya.topic, log) + '\n\nさらに返答の最後に「' + hints + 'のお話でしたか？」という確認を自然な流れで1文だけ付け加えてください。';
+          ya.skipNextTurnImage = true; // 情報収集ターンは絵不要
+          reply = await callAnthropic(infoPrompt, 150);
+        }
+      } catch(e) {
+        console.warn('yaStoryContext check failed:', e);
+      }
+    }
+    if (!reply) reply = await callAnthropic(cfg.aiPrompt(ya.topic, log), 120);
+    yaAddBubble('✨ AI', reply, 'ai');
+    ya.turns.push({ who: 'AI', text: reply, isAI: true });
+    speakText(reply);
+  } catch(e) {
+    yaAddBubble('✨ AI', 'はい、そうですね。それはすてきな思い出ですね。', 'ai');
+  }
+  document.getElementById('yesand-thinking').style.display = 'none';
+  ra.style.opacity = '1'; ra.style.pointerEvents = 'auto';
+  ya.generating = false;
+  yaUpdateTurnBadge();
+  document.getElementById('yesand-send-btn').disabled = false;
+}
+
+function yaAddBubble(who, text, type) {
+  const log = document.getElementById('yesand-log');
+  const div = document.createElement('div');
+  div.className = 'yesand-bubble' + (type === 'ai' ? ' ai-bubble' : type === 'topic' ? ' topic-bubble' : '');
+  div.innerHTML = '<div class="yesand-who">' + escHtml(who) + '</div><div class="yesand-text">' + escHtml(text) + '</div>';
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function yaFinish() {
+  const cfg = YA_MODE_CONFIG[ya.mode];
+  document.getElementById('ya-end-title').textContent = cfg.finishTitle;
+  document.getElementById('ya-end-sub').textContent = ya.turns.length + '回のやりとりでした';
+  const logEl = document.getElementById('ya-end-log');
+  logEl.innerHTML = '';
+  ya.turns.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'yesand-end-line';
+    div.innerHTML = '<span class="who">' + escHtml(t.who) + '</span>' + escHtml(t.text);
+    logEl.appendChild(div);
+  });
+  showScreen('yesand-end');
+}
+
+function yaToEhon() {
+  // skipImageターン（情報収集への返答）は絵本から除外
+  state.turns = ya.turns
+    .filter(t => !t.isAI && !t.skipImage)
+    .map(t => ({ playerIdx: 0, text: t.text, imageUrl: null, audioBlob: null }));
+  state.storyTitle = ya.topic;
+  state.players = ya.players;
+  state.totalTurns = state.turns.length;
+  // BUG FIX: Yes ANDから絵本生成する際は前の背景情報をリセット
+  state.storyContext = { era: '', place: '', characters: '', checked: false };
+  state.skipNextImage = false;
+  bgGenCompleted = 0; bgGenTotal = 0;
+  imageGenQueue.length = 0; imageGenRunning = false;
+  if (state.keys.openai) {
+    state.turns.forEach((t, i) => enqueueImage(t.text, i));
+  }
+  launchFinale();
+}
+
+// ============================================================
+//  ANTHROPIC API
+// ============================================================
+async function callAnthropic(prompt, maxTokens = 200) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': state.keys.anthropic,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: maxTokens,
+      system: '簡潔に、指定された形式のみで出力する。余分な説明は一切加えない。',
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.content[0].text.trim();
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+}
+
+function showToast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
