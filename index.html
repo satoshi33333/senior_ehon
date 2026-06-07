@@ -1883,20 +1883,31 @@ async function processImageQueue() {
   imageGenRunning = true;
   while (imageGenQueue.length > 0) {
     const { text, turnIdx } = imageGenQueue.shift();
-    try {
-      // 1枚あたり最大60秒のタイムアウトを設定（詰まり防止）
-      await Promise.race([
-        generateImage(text, turnIdx),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 60000))
-      ]);
-    } catch(e) {
-      console.warn('Image gen failed:', e.message);
-      // エラー・タイムアウト時はプレースホルダー画像を設定
-      if (state.turns[turnIdx]) state.turns[turnIdx].imageUrl = null;
+    let success = false;
+    // 最大2回試みる（初回 + リトライ1回）
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        if (attempt > 0) {
+          console.log('Image gen retry:', turnIdx);
+          await sleep(8000); // リトライ前に8秒待つ
+        }
+        await Promise.race([
+          generateImage(text, turnIdx),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 120000))
+        ]);
+        success = true;
+        break;
+      } catch(e) {
+        console.warn('Image gen attempt ' + (attempt+1) + ' failed:', e.message);
+      }
+    }
+    if (!success && state.turns[turnIdx]) {
+      state.turns[turnIdx].imageUrl = null;
     }
     bgGenCompleted++;
     updateGenProgress();
-    if (imageGenQueue.length > 0) await sleep(6000); // レート制限対策：6秒待つ
+    // 次の枚まで待つ（レート制限：5枚/分 = 12秒以上が安全）
+    if (imageGenQueue.length > 0) await sleep(13000);
   }
   imageGenRunning = false;
   if (bgGenCompleted >= bgGenTotal) {
